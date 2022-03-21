@@ -16,52 +16,53 @@ const { createTestTicket } = require('@condo/domains/ticket/utils/testSchema')
 let userObject = {}
 
 module.exports = async (on, config) => {
+    if (config['baseUrl'].includes('localhost')) {
+        const admin = await makeLoggedInAdminClient()
 
-    const admin = await makeLoggedInAdminClient()
+        on('task', {
+            async 'keystone:createUser' () {
+                return await createTestUser(admin)
+            },
+            async 'keystone:createForgotPasswordAction' (user) {
+                return await createTestForgotPasswordAction(admin, user)
+            },
+            async 'keystone:getConfirmPhoneAction' (phone) {
+                return await ConfirmPhoneAction.getAll(admin, { phone })
+            },
+            async 'keystone:createUserWithProperty' () {
+                if (isEmpty(userObject)) {
+                    const result = await makeClientWithProperty()
+                    const client = await makeLoggedInClient(result.userAttrs)
+                    const cookie = client.getCookie()
 
-    on('task', {
-        async 'keystone:createUser' () {
-            return await createTestUser(admin)
-        },
-        async 'keystone:createForgotPasswordAction' (user) {
-            return await createTestForgotPasswordAction(admin, user)
-        },
-        async 'keystone:getConfirmPhoneAction' (phone) {
-            return await ConfirmPhoneAction.getAll(admin, { phone })
-        },
-        async 'keystone:createUserWithProperty' () {
-            if (isEmpty(userObject)) {
-                const result = await makeClientWithProperty()
-                const client = await makeLoggedInClient(result.userAttrs)
-                const cookie = client.getCookie()
+                    const organizationLink = await OrganizationEmployee.getOne(client, {
+                        user: { id: result.userAttrs.id }, isRejected: false, isBlocked: false,
+                    })
+                    const user = Object.assign({}, result.user)
+                    userObject = Object.assign({}, {
+                        user,
+                        property: result.property,
+                        cookie,
+                        organizationLinkId: organizationLink.id,
+                        userAttrs: result.userAttrs,
+                        organization: result.organization,
+                    })
 
-                const organizationLink = await OrganizationEmployee.getOne(client, {
-                    user: { id: result.userAttrs.id }, isRejected: false, isBlocked: false,
-                })
-                const user = Object.assign({}, result.user)
-                userObject = Object.assign({}, {
-                    user,
-                    property: result.property,
-                    cookie,
-                    organizationLinkId: organizationLink.id,
-                    userAttrs: result.userAttrs,
-                    organization: result.organization,
-                })
+                    return userObject
+                }
 
                 return userObject
-            }
 
-            return userObject
-
-        },
-        async 'keystone:createTickets' (ticketAttrs) {
-            const client = await makeLoggedInClient(ticketAttrs.userAttrs)
-            await createTestTicket(client, ticketAttrs.organization, ticketAttrs.property, { isWarranty: true })
-            await createTestTicket(client, ticketAttrs.organization, ticketAttrs.property, { isEmergency: true })
-            await createTestTicket(client, ticketAttrs.organization, ticketAttrs.property, { isPaid: true })
-            return null
-        },
-    })
+            },
+            async 'keystone:createTickets' (ticketAttrs) {
+                const client = await makeLoggedInClient(ticketAttrs.userAttrs)
+                await createTestTicket(client, ticketAttrs.organization, ticketAttrs.property, { isWarranty: true })
+                await createTestTicket(client, ticketAttrs.organization, ticketAttrs.property, { isEmergency: true })
+                await createTestTicket(client, ticketAttrs.organization, ticketAttrs.property, { isPaid: true })
+                return null
+            },
+        })
+    }
 
     return config
 
