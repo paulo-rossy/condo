@@ -1100,7 +1100,7 @@ class MapEdit extends MapView {
 
     private selectedParkingUnit: BuildingUnit
 
-    private generateSection (section: Partial<BuildingSectionArg>, unitType: BuildingUnitType): BuildingSection {
+    public generateSection (section: Partial<BuildingSectionArg>, unitType: BuildingUnitType): BuildingSection {
         let unitNumber = this.nextUnitNumber
         const { name, minFloor, maxFloor, unitsOnFloor } = section
         const newSection: BuildingSection = {

@@ -43,6 +43,7 @@ import isEmpty from 'lodash/isEmpty'
 import isNull from 'lodash/isNull'
 import last from 'lodash/last'
 import { useHotkeys } from 'react-hotkeys-hook'
+import { createWorkerFactory, useWorker } from '@shopify/react-web-worker'
 import ScrollContainer from 'react-indiana-drag-scroll'
 import { useLayoutContext } from '@condo/domains/common/components/LayoutContext'
 import {
@@ -825,6 +826,7 @@ interface IAddSectionFormProps {
 const MODAL_FORM_ROW_GUTTER: RowProps['gutter'] = [0, 24]
 const MODAL_FORM_ROW_BUTTONS_GUTTER: RowProps['gutter'] = [0, 16]
 const MODAL_FORM_BUTTON_STYLE: React.CSSProperties = { marginTop: '12px' }
+const createSectionWorker = createWorkerFactory(() => import('./worker/addSection'))
 
 const AddSectionForm: React.FC<IAddSectionFormProps> = ({ builder, refresh }) => {
     const intl = useIntl()
@@ -868,21 +870,39 @@ const AddSectionForm: React.FC<IAddSectionFormProps> = ({ builder, refresh }) =>
         return floorCount + minFloor
     }, [floorCount, minFloor])
 
-    useEffect(() => {
+    const worker = useWorker(createSectionWorker)
+
+    useEffect( () => {
         if (minFloor && floorCount && unitsOnFloor && sectionName) {
-            builder.addPreviewSection({
-                id: '',
-                name: sectionName,
-                minFloor,
-                maxFloor: maxFloorValue,
-                unitsOnFloor,
-            }, unitType)
-            refresh()
-        } else {
-            builder.removePreviewSection()
+            (async () => {
+                const generatedSection = await worker.generateSection(builder, {
+                    id: '',
+                    name: sectionName,
+                    minFloor,
+                    maxFloor: maxFloorValue,
+                    unitsOnFloor,
+                }, unitType)
+                console.log(generatedSection)
+            })()
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [minFloor, floorCount, unitsOnFloor, sectionName, unitType])
+
+
+    // useEffect(() => {
+    //     if (minFloor && floorCount && unitsOnFloor && sectionName) {
+    //         builder.addPreviewSection({
+    //             id: '',
+    //             name: sectionName,
+    //             minFloor,
+    //             maxFloor: maxFloorValue,
+    //             unitsOnFloor,
+    //         }, unitType)
+    //         refresh()
+    //     } else {
+    //         builder.removePreviewSection()
+    //     }
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [minFloor, floorCount, unitsOnFloor, sectionName, unitType])
 
     useEffect(() => {
         if (copyId !== null) {

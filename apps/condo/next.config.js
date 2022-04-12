@@ -54,6 +54,7 @@ module.exports = withTM(withLess(withCSS({
         config.module.rules = [
             ...(config.module.rules || []),
             { test: /lang\/.*\.njk$/, use: 'raw-loader' },
+            { test: /\.(mjs)$/, include: /node_modules/, type: 'javascript/auto' },
         ]
 
         return config
