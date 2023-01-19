@@ -891,6 +891,8 @@
   "pages.users.status.Rejected": "Пользователь отклонил приглашение.",
   "pages.users.status.WaitAcceptOrReject": "Зарегистрировался, пока не принял приглашение",
   "pages.users.UserIsAlreadyInList": "Пользователь уже добавлен в список",
+  "pages.banking.uploadTransactionsFile": "Загрузить файл с транзакциями",
+  "pages.banking.removeReport": "Удалить отчет",
   "EmployeeRoles": "Роли сотрудников",
   "EmployeeRoles.availableTickets": "Какие заявки видит сотрудник",
   "EmployeeRoles.availableTickets.allTickets": "все заявки",

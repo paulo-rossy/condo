@@ -890,6 +890,8 @@
   "pages.users.status.Rejected": "User has rejected the invitation.",
   "pages.users.status.WaitAcceptOrReject": "User registered, waiting for an accept/reject action",
   "pages.users.UserIsAlreadyInList": "The user is already in user list",
+  "pages.banking.uploadTransactionsFile": "Upload file with transactions",
+  "pages.banking.removeReport": "Remove report",
   "EmployeeRoles": "Employee roles",
   "EmployeeRoles.availableTickets": "Which tickets the employee sees",
   "EmployeeRoles.availableTickets.allTickets": "all tickets",

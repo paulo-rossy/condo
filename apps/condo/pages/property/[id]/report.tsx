@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import Head from 'next/head'
@@ -9,30 +9,23 @@ import type { RowProps } from 'antd'
 import { Typography, Button } from '@open-condo/ui'
 import { PageContent, PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
 import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
-import { Table } from '@condo/domains/common/components/Table'
+import ActionBar from '@condo/domains/common/components/ActionBar'
 import LoadingOrErrorPage from '@condo/domains/common/components/containers/LoadingOrErrorPage'
 import { BasicEmptyListView } from '@condo/domains/common/components/EmptyListView'
-import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
-import Input from '@condo/domains/common/components/antd/Input'
-import { useSearch } from '@condo/domains/common/hooks/useSearch'
 import { OrganizationRequired } from '@condo/domains/organization/components/OrganizationRequired'
 import { Property } from '@condo/domains/property/utils/clientSchema'
-import {
-    BankAccount,
-    BankContractorAccount,
-    BankTransaction,
-} from '@condo/domains/banking/utils/clientSchema'
+import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 
 import type {
     Property as PropertyType,
     BankAccount as BankAccountType,
-    BankContractorAccount as BankContractorAccountType,
 } from '@app/condo/schema'
 import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/SberIcon'
 import { Loader } from '@condo/domains/common/components/Loader'
-import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
+import BankContractorAccountTable from '@condo/domains/banking/components/BankContractorAccountTable'
+import BankTransactionsTable from '@condo/domains/banking/components/BankTransactionsTable'
 
-const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [0, 20]
+const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [24, 20]
 const PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER: RowProps['gutter'] = [0, 60]
 const DATE_DISPLAY_FORMAT = {
     day: 'numeric',
@@ -83,68 +76,28 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const IncomeTitle = intl.formatMessage({ id: 'global.income' }, { isSingular: false })
     const WithdrawalTitle = intl.formatMessage({ id: 'global.withdrawal' }, { isSingular: false })
     const ContractorTitle = intl.formatMessage({ id: 'global.contractor' }, { isSingular: false })
-    const SearchPlaceholderTitle = intl.formatMessage({ id: 'filters.FullSearch' })
-
-    const { objs: bankTransactions } = BankTransaction.useObjects({
-        where: {
-            account: { id: bankAccount.id },
-        },
-    })
-    const { objs: bankContractorAccounts } = BankContractorAccount.useObjects({
-        where: {
-            organization: { id: organizationId },
-
-        },
-    })
-
-    const [bankTransactionTableColumns, bankContractorAccountTableColumns] = useTableColumns()
-    const [search, changeSearch] = useSearch<{ search?: string }>()
-
-
-    const handleSearchChange = useCallback((e) => {
-        changeSearch(e.target.value)
-    }, [changeSearch])
+    const UploadFileTitle = intl.formatMessage({ id: 'pages.banking.uploadTransactionsFile' })
+    const RemoveReportTitle = intl.formatMessage({ id: 'pages.banking.removeReport' })
 
     return (
         <>
-            <TableFiltersContainer>
-                <Row justify='end' gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
-                    <Col flex='auto'>
-                        <Input
-                            placeholder={SearchPlaceholderTitle}
-                            allowClear
-                            value={search}
-                            onChange={handleSearchChange}
-                        />
-                    </Col>
-                </Row>
-            </TableFiltersContainer>
             <Tabs>
-                <Tabs.TabPane tab={IncomeTitle} key='income'>
-                    <Table
-                        dataSource={bankTransactions.filter(transaction => isNull(transaction.dateWithdrawed))}
-                        columns={bankTransactionTableColumns}
-                        rowSelection={{ type: 'checkbox' }}
-                        pagination={false}
-                    />
+                <Tabs.TabPane tab={IncomeTitle} key='receive'>
+                    <BankTransactionsTable bankAccount={bankAccount} type='receive' />
                 </Tabs.TabPane>
-                <Tabs.TabPane tab={WithdrawalTitle} key='withdrawal'>
-                    <Table
-                        dataSource={bankTransactions.filter(transaction => isNull(transaction.dateReceived))}
-                        columns={bankTransactionTableColumns}
-                        rowSelection={{ type: 'checkbox' }}
-                        pagination={false}
-                    />
+                <Tabs.TabPane tab={WithdrawalTitle} key='withdraw'>
+                    <BankTransactionsTable bankAccount={bankAccount} type='withdraw' />
                 </Tabs.TabPane>
                 <Tabs.TabPane tab={ContractorTitle} key='contractors'>
-                    <Table
-                        dataSource={bankContractorAccounts}
-                        columns={bankContractorAccountTableColumns}
-                        rowSelection={{ type: 'checkbox' }}
-                        pagination={false}
-                    />
+                    <BankContractorAccountTable organizationId={organizationId} />
                 </Tabs.TabPane>
             </Tabs>
+            <ActionBar>
+                <Space size={12}>
+                    <Button type='primary'>{UploadFileTitle}</Button>
+                    <Button type='secondary' danger>{RemoveReportTitle}</Button>
+                </Space>
+            </ActionBar>
         </>
     )
 }
