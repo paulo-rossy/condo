@@ -12,6 +12,8 @@ import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
 import type { BankAccount, BankTransactionWhereInput } from '@app/condo/schema'
+import { useRouter } from 'next/router'
+import { parseQuery } from '../../common/utils/tables.utils'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [24, 40]
 
@@ -23,8 +25,10 @@ const BankContractorAccountTable: IBankContractorAccountTable = ({ bankAccount, 
     const intl = useIntl()
     const SearchPlaceholderTitle = intl.formatMessage({ id: 'filters.FullSearch' })
 
+    const router = useRouter()
+    const { filters, offset } = parseQuery(router.query)
     const queryMeta = useTableFilters()
-    // const {} = useQueryMappers()
+    const { filtersToWhere } = useQueryMappers(queryMeta, [])
 
     const whereQuery: BankTransactionWhereInput = type === 'withdraw'
         ? { dateReceived: null }
@@ -34,13 +38,12 @@ const BankContractorAccountTable: IBankContractorAccountTable = ({ bankAccount, 
         where: {
             account: { id: bankAccount.id },
             ...whereQuery,
+            ...filtersToWhere(filters),
         },
     })
     const [bankTransactionTableColumns] = useTableColumns()
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', loading)
-
-
 
     const handleSearchChange = useCallback((e) => {
         changeSearch(e.target.value)
