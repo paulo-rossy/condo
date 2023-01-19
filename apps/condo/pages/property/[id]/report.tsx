@@ -83,6 +83,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const IncomeTitle = intl.formatMessage({ id: 'global.income' }, { isSingular: false })
     const WithdrawalTitle = intl.formatMessage({ id: 'global.withdrawal' }, { isSingular: false })
     const ContractorTitle = intl.formatMessage({ id: 'global.contractor' }, { isSingular: false })
+    const SearchPlaceholderTitle = intl.formatMessage({ id: 'filters.FullSearch' })
 
     const { objs: bankTransactions } = BankTransaction.useObjects({
         where: {
@@ -110,7 +111,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                 <Row justify='end' gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
                     <Col flex='auto'>
                         <Input
-                            placeholder='search pl'
+                            placeholder={SearchPlaceholderTitle}
                             allowClear
                             value={search}
                             onChange={handleSearchChange}
