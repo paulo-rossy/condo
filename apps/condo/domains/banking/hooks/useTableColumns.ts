@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react'
-import get from 'lodash/get'
+import isNull from 'lodash/isNull'
+import type { FilterValue } from 'antd/lib/table/interface'
 import { useIntl } from '@open-condo/next/intl'
 import { useRouter } from 'next/router'
 import { getFilteredValue } from '@condo/domains/common/utils/helpers'
@@ -7,8 +8,16 @@ import {
     getTextRender,
     getDateRender,
     getMoneyRender,
+    getTableCellRenderer,
 } from '@condo/domains/common/components/Table/Renders'
+import type { RenderReturnType } from '@condo/domains/common/components/Table/Renders'
 import { parseQuery } from '@condo/domains/common/utils/tables.utils'
+
+const renderCategory = (search: FilterValue | string, nullReplace: string) => {
+    return function render (text: string): RenderReturnType {
+        return getTableCellRenderer(search)(isNull(text) ? nullReplace : text)
+    }
+}
 
 export function useTableColumns () {
     const intl = useIntl()
@@ -21,6 +30,7 @@ export function useTableColumns () {
     const ReceiverTitle = intl.formatMessage({ id: 'global.receiver' })
     const PaymentPurposeTitle = intl.formatMessage({ id: 'global.paymentPurpose' })
     const SumTitle = intl.formatMessage({ id: 'global.sum' })
+    const CategoryNotSetTitle = intl.formatMessage({ id: 'pages.banking.table.notSet' })
 
     const router = useRouter()
 
@@ -60,15 +70,15 @@ export function useTableColumns () {
             {
                 title: PaymentPurposeTitle,
                 key: 'target',
-                width: '20%',
+                width: '18%',
                 render: getTextRender(search),
                 dataIndex: 'purpose',
             },
             {
                 title: CategoryTitle,
                 key: 'category',
-                width: '10%',
-                render: getTextRender(search),
+                width: '12%',
+                render: renderCategory(search, CategoryNotSetTitle),
                 dataIndex: ['costItem', 'category', 'name'],
             },
             {
@@ -106,7 +116,7 @@ export function useTableColumns () {
                 dataIndex: ['costItem', 'category', 'name'],
                 key: 'category',
                 width: '35%',
-                render: getTextRender(search),
+                render: renderCategory(search, CategoryNotSetTitle),
             },
         ],
     ], [search, ContractorTitle, TinTitle, BankAccountTitle, CategoryTitle, NumberTitle,
