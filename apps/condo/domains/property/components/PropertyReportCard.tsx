@@ -2,6 +2,7 @@
 import { jsx } from '@emotion/react'
 import styled from '@emotion/styled'
 import { Space, Image, notification } from 'antd'
+import { useRouter } from 'next/router'
 import cookie from 'js-cookie'
 import get from 'lodash/get'
 import React, { useState, useCallback } from 'react'
@@ -72,6 +73,7 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
     const AlreadySentTitle = intl.formatMessage({ id: 'pages.condo.property.id.AlreadySentTitle' })
     const LoadingError = intl.formatMessage({ id: 'errors.LoadingError' })
 
+    const { asPath, push } = useRouter()
     const { useFlag } = useFeatureFlags()
     const [{ width }, setRef] = useContainerSize<HTMLDivElement>()
 
@@ -79,6 +81,9 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
 
     const [bankAccountModalVisible, setBankAccountModalVisible] = useState(false)
 
+    const setupReportClick = useCallback(async () => {
+        await push(asPath + '/report')
+    }, [asPath, push])
     const createBankAccountRequestCallback = useCallback(async () => {
         const alreadySent = cookie.get(`createBankAccountRequestSent-${property.id}`)
         if (alreadySent) {
@@ -138,7 +143,7 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
                         isButtonsHidden={isButtonsHidden}
                     >
                         <Space direction='vertical' size={12} hidden={isButtonsHidden}>
-                            <Button type='primary'>
+                            <Button type='primary' onClick={setupReportClick}>
                                 {SetupReportTitle}
                             </Button>
                             <Button
