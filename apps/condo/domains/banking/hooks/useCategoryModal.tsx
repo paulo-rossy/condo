@@ -1,8 +1,10 @@
-import React, { useState, useCallback, useMemo } from 'react'
 import { Row, Col } from 'antd'
 import get from 'lodash/get'
+import React, { useState, useCallback, useMemo } from 'react'
+
 import { useIntl } from '@open-condo/next/intl'
 import { Modal, Typography, List } from '@open-condo/ui'
+
 import type { BankTransaction } from '@app/condo/schema'
 
 interface IUseCategoryModal {

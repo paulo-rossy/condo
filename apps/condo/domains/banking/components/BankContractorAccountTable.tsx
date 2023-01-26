@@ -1,12 +1,14 @@
-import React, { useCallback, useMemo } from 'react'
 import { Row, Col, RowProps } from 'antd'
+import React, { useCallback, useMemo } from 'react'
+
 import { useIntl } from '@open-condo/next/intl'
+
+import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
+import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
+import Input from '@condo/domains/common/components/antd/Input'
 import { Table } from '@condo/domains/common/components/Table'
 import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
 import { useSearch } from '@condo/domains/common/hooks/useSearch'
-import Input from '@condo/domains/common/components/antd/Input'
-import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
-import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [24, 40]
 

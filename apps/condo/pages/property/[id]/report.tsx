@@ -1,29 +1,31 @@
-import React from 'react'
-import { useIntl } from '@open-condo/next/intl'
-import { useOrganization } from '@open-condo/next/organization'
+import { Row, Col, Tabs, Space } from 'antd'
+import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import isNull from 'lodash/isNull'
-import { Row, Col, Tabs, Space } from 'antd'
-import type { RowProps } from 'antd'
+import React from 'react'
+
+import { useIntl } from '@open-condo/next/intl'
+import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button } from '@open-condo/ui'
-import { PageContent, PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
-import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
+
+import BankContractorAccountTable from '@condo/domains/banking/components/BankContractorAccountTable'
+import BankTransactionsTable from '@condo/domains/banking/components/BankTransactionsTable'
+import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
+import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
+import { PageContent, PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
 import LoadingOrErrorPage from '@condo/domains/common/components/containers/LoadingOrErrorPage'
 import { BasicEmptyListView } from '@condo/domains/common/components/EmptyListView'
+import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/SberIcon'
+import { Loader } from '@condo/domains/common/components/Loader'
 import { OrganizationRequired } from '@condo/domains/organization/components/OrganizationRequired'
 import { Property } from '@condo/domains/property/utils/clientSchema'
-import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 
 import type {
     Property as PropertyType,
     BankAccount as BankAccountType,
 } from '@app/condo/schema'
-import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/SberIcon'
-import { Loader } from '@condo/domains/common/components/Loader'
-import BankContractorAccountTable from '@condo/domains/banking/components/BankContractorAccountTable'
-import BankTransactionsTable from '@condo/domains/banking/components/BankTransactionsTable'
+import type { RowProps } from 'antd'
 
 const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [24, 20]
 const PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER: RowProps['gutter'] = [0, 60]

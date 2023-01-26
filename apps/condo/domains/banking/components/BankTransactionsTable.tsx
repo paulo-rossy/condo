@@ -1,21 +1,24 @@
-import React, { useCallback, useMemo, useRef } from 'react'
 import { Row, Col, RowProps } from 'antd'
+import { useRouter } from 'next/router'
+import React, { useCallback, useMemo, useRef } from 'react'
+
 import { useIntl } from '@open-condo/next/intl'
-import { Table } from '@condo/domains/common/components/Table'
-import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
-import { useSearch } from '@condo/domains/common/hooks/useSearch'
-import { useDateRangeSearch } from '@condo/domains/common/hooks/useDateRangeSearch'
-import { parseQuery } from '@condo/domains/common/utils/tables.utils'
-import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
-import Input from '@condo/domains/common/components/antd/Input'
-import DateRangePicker from '@condo/domains/common/components/Pickers/DateRangePicker'
 import { Checkbox } from '@open-condo/ui'
-import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
+
+import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
-import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
+import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
+import Input from '@condo/domains/common/components/antd/Input'
+import DateRangePicker from '@condo/domains/common/components/Pickers/DateRangePicker'
+import { Table } from '@condo/domains/common/components/Table'
+import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
+import { useDateRangeSearch } from '@condo/domains/common/hooks/useDateRangeSearch'
+import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
+import { useSearch } from '@condo/domains/common/hooks/useSearch'
+import { parseQuery } from '@condo/domains/common/utils/tables.utils'
+
 import type { BankAccount, BankTransactionWhereInput, BankTransaction as BankTransactionType } from '@app/condo/schema'
-import { useRouter } from 'next/router'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [24, 40]
 

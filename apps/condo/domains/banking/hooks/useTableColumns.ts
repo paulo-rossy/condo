@@ -1,17 +1,20 @@
-import { useCallback, useMemo } from 'react'
 import isNull from 'lodash/isNull'
-import type { FilterValue } from 'antd/lib/table/interface'
-import { useIntl } from '@open-condo/next/intl'
 import { useRouter } from 'next/router'
-import { getFilteredValue } from '@condo/domains/common/utils/helpers'
+import { useCallback, useMemo } from 'react'
+
+import { useIntl } from '@open-condo/next/intl'
+
 import {
     getTextRender,
     getDateRender,
     getMoneyRender,
     getTableCellRenderer,
 } from '@condo/domains/common/components/Table/Renders'
-import type { RenderReturnType } from '@condo/domains/common/components/Table/Renders'
+import { getFilteredValue } from '@condo/domains/common/utils/helpers'
 import { parseQuery } from '@condo/domains/common/utils/tables.utils'
+
+import type { RenderReturnType } from '@condo/domains/common/components/Table/Renders'
+import type { FilterValue } from 'antd/lib/table/interface'
 
 const renderCategory = (search: FilterValue | string, nullReplace: string) => {
     return function render (text: string): RenderReturnType {
