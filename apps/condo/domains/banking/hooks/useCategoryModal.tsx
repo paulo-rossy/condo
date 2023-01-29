@@ -5,7 +5,12 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { useIntl } from '@open-condo/next/intl'
 import { Modal, Typography, List } from '@open-condo/ui'
 
+import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+
 import type { BankTransaction } from '@app/condo/schema'
+import type { RowProps } from 'antd'
+
+const CATEGORY_MODAL_ROW_GUTTER: RowProps['gutter'] = [0, 40]
 
 interface IUseCategoryModal {
     ({ bankTransactions }: { bankTransactions: Array<BankTransaction> }): {
@@ -20,17 +25,16 @@ export const useCategoryModal: IUseCategoryModal = ({ bankTransactions }) => {
     const BankAccountTitle = intl.formatMessage({ id: 'global.bankAccount' })
     const ChooseCategoryTitle = intl.formatMessage({ id: 'pages.banking.chooseCategory' })
 
+    const { bankCostItems, loading } = useBankCostItemContext()
     const [open, setOpen] = useState(false)
 
     const closeModal = useCallback(() => {
         setOpen(false)
     }, [])
 
-    console.log(bankTransactions)
-
     const categoryModal = useMemo(() => (
         <Modal title={ModalTitle} open={open} onCancel={closeModal}>
-            <Row gutter={[0, 40]}>
+            <Row gutter={CATEGORY_MODAL_ROW_GUTTER}>
                 <Col span={24}>
                     <List dataSource={[{
                         label: BankAccountTitle,
@@ -42,7 +46,7 @@ export const useCategoryModal: IUseCategoryModal = ({ bankTransactions }) => {
                 </Col>
             </Row>
         </Modal>
-    ), [open, closeModal, ModalTitle])
+    ), [open, closeModal, ModalTitle, BankAccountTitle, ChooseCategoryTitle, bankTransactions])
 
     return { categoryModal, setOpen }
 }

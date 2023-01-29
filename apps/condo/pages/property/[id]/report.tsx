@@ -2,13 +2,14 @@ import { Row, Col, Tabs, Space } from 'antd'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button } from '@open-condo/ui'
 
 import BankContractorAccountTable from '@condo/domains/banking/components/BankContractorAccountTable'
+import { BankCostItemProvider, useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import BankTransactionsTable from '@condo/domains/banking/components/BankTransactionsTable'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
@@ -18,6 +19,8 @@ import LoadingOrErrorPage from '@condo/domains/common/components/containers/Load
 import { BasicEmptyListView } from '@condo/domains/common/components/EmptyListView'
 import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/SberIcon'
 import { Loader } from '@condo/domains/common/components/Loader'
+import { useSearch } from '@condo/domains/common/hooks/useSearch'
+import { getFiltersFromQuery, updateQuery } from '@condo/domains/common/utils/helpers'
 import { OrganizationRequired } from '@condo/domains/organization/components/OrganizationRequired'
 import { Property } from '@condo/domains/property/utils/clientSchema'
 
@@ -81,9 +84,22 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const UploadFileTitle = intl.formatMessage({ id: 'pages.banking.uploadTransactionsFile' })
     const RemoveReportTitle = intl.formatMessage({ id: 'pages.banking.removeReport' })
 
+    const router = useRouter()
+    const [, , resetSearch] = useSearch()
+
+    const [activeTab, setActiveTab] = useState('receive')
+
+    const onTabChange = useCallback((tab) => {
+        // const newRoute = `${asPath}?tab=${tab}`
+        // console.log(newRoute)
+        setActiveTab(tab)
+        // push(newRoute).then(resetSearch)
+        // updateQuery(router, { ...router.query, tab })
+    }, [resetSearch])
+
     return (
         <>
-            <Tabs>
+            <Tabs activeKey={activeTab} onChange={onTabChange}>
                 <Tabs.TabPane tab={IncomeTitle} key='receive'>
                     <BankTransactionsTable bankAccount={bankAccount} type='receive' />
                 </Tabs.TabPane>
@@ -192,9 +208,11 @@ const PropertyReportPage = (): React.ReactElement => {
             <Head><title>{PageTitle}</title></Head>
             <PageWrapper>
                 <OrganizationRequired>
-                    <PageContent>
-                        <PropertyReportPageContent property={property} />
-                    </PageContent>
+                    <BankCostItemProvider>
+                        <PageContent>
+                            <PropertyReportPageContent property={property} />
+                        </PageContent>
+                    </BankCostItemProvider>
                 </OrganizationRequired>
             </PageWrapper>
         </>
