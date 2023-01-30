@@ -2,25 +2,28 @@ import { Row, Col, Tabs, Space } from 'antd'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
-import { Typography, Button } from '@open-condo/ui'
+import { Typography, Button, Checkbox } from '@open-condo/ui'
 
 import BankContractorAccountTable from '@condo/domains/banking/components/BankContractorAccountTable'
-import { BankCostItemProvider, useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+import { BankCostItemProvider } from '@condo/domains/banking/components/BankCostItemContext'
 import BankTransactionsTable from '@condo/domains/banking/components/BankTransactionsTable'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
+import Input from '@condo/domains/common/components/antd/Input'
 import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
 import { PageContent, PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
 import LoadingOrErrorPage from '@condo/domains/common/components/containers/LoadingOrErrorPage'
 import { BasicEmptyListView } from '@condo/domains/common/components/EmptyListView'
 import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/SberIcon'
 import { Loader } from '@condo/domains/common/components/Loader'
+import DateRangePicker from '@condo/domains/common/components/Pickers/DateRangePicker'
+import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
+import { useDateRangeSearch } from '@condo/domains/common/hooks/useDateRangeSearch'
 import { useSearch } from '@condo/domains/common/hooks/useSearch'
-import { getFiltersFromQuery, updateQuery } from '@condo/domains/common/utils/helpers'
 import { OrganizationRequired } from '@condo/domains/organization/components/OrganizationRequired'
 import { Property } from '@condo/domains/property/utils/clientSchema'
 
@@ -81,35 +84,75 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const IncomeTitle = intl.formatMessage({ id: 'global.income' }, { isSingular: false })
     const WithdrawalTitle = intl.formatMessage({ id: 'global.withdrawal' }, { isSingular: false })
     const ContractorTitle = intl.formatMessage({ id: 'global.contractor' }, { isSingular: false })
+    const SearchPlaceholderTitle = intl.formatMessage({ id: 'filters.FullSearch' })
+    const CategoryCheckboxTitle = intl.formatMessage({ id: 'pages.banking.categoryNotSet' })
     const UploadFileTitle = intl.formatMessage({ id: 'pages.banking.uploadTransactionsFile' })
     const RemoveReportTitle = intl.formatMessage({ id: 'pages.banking.removeReport' })
 
-    const router = useRouter()
-    const [, , resetSearch] = useSearch()
+    const [tab, setTab] = useState('receive')
 
-    const [activeTab, setActiveTab] = useState('receive')
+    const [search, changeSearch, resetSearch] = useSearch<{ search?: string }>()
+    const [categoryNotSet, setCategoryNotSet] = useState(false)
+    // const [dateRange, setDateRange] = useDateRangeSearch('date', loading)
 
-    const onTabChange = useCallback((tab) => {
-        // const newRoute = `${asPath}?tab=${tab}`
-        // console.log(newRoute)
-        setActiveTab(tab)
-        // push(newRoute).then(resetSearch)
-        // updateQuery(router, { ...router.query, tab })
-    }, [resetSearch])
+    const handleSearchChange = useCallback((e) => {
+        changeSearch(e.target.value)
+    }, [changeSearch])
+    const handleCategoryFilterChange = useCallback(() => {
+        setCategoryNotSet(!categoryNotSet)
+    }, [categoryNotSet])
+
+    const tabContent = useMemo(() => {
+        switch (tab) {
+            case 'receive':
+                return <BankTransactionsTable bankAccount={bankAccount} type={tab} categoryNotSet={categoryNotSet} />
+            case 'withdraw':
+                return <BankTransactionsTable bankAccount={bankAccount} type={tab} categoryNotSet={categoryNotSet} />
+            case 'contractors':
+                return <BankContractorAccountTable organizationId={organizationId} categoryNotSet={categoryNotSet} />
+        }
+    }, [tab, bankAccount, organizationId, categoryNotSet])
 
     return (
         <>
-            <Tabs activeKey={activeTab} onChange={onTabChange}>
-                <Tabs.TabPane tab={IncomeTitle} key='receive'>
-                    <BankTransactionsTable bankAccount={bankAccount} type='receive' />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab={WithdrawalTitle} key='withdraw'>
-                    <BankTransactionsTable bankAccount={bankAccount} type='withdraw' />
-                </Tabs.TabPane>
-                <Tabs.TabPane tab={ContractorTitle} key='contractors'>
-                    <BankContractorAccountTable organizationId={organizationId} />
-                </Tabs.TabPane>
-            </Tabs>
+            <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
+                <Col span={24}>
+                    <Tabs activeKey={tab} onChange={setTab}>
+                        <Tabs.TabPane tab={IncomeTitle} key='receive' />
+                        <Tabs.TabPane tab={WithdrawalTitle} key='withdraw' />
+                        <Tabs.TabPane tab={ContractorTitle} key='contractors' />
+                    </Tabs>
+                    <TableFiltersContainer>
+                        <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER} align='middle'>
+                            <Col span={6}>
+                                <Input
+                                    placeholder={SearchPlaceholderTitle}
+                                    value={search}
+                                    onChange={handleSearchChange}
+                                />
+                            </Col>
+                            {tab !== 'contractors' && (
+                                <Col span={6}>
+                                    <DateRangePicker
+                                        // value={dateRange}
+                                        // onChange={setDateRange}
+                                    />
+                                </Col>
+                            )}
+                            <Col>
+                                <Checkbox
+                                    label={CategoryCheckboxTitle}
+                                    checked={categoryNotSet}
+                                    onChange={handleCategoryFilterChange}
+                                />
+                            </Col>
+                        </Row>
+                    </TableFiltersContainer>
+                </Col>
+                <Col span={24}>
+                    {tabContent}
+                </Col>
+            </Row>
             <ActionBar>
                 <Space size={12}>
                     <Button type='primary'>{UploadFileTitle}</Button>
