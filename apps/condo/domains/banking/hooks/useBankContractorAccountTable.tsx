@@ -8,11 +8,18 @@ import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema
 import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
+import type { BankContractorAccount as BankContractorAccountType } from '@app/condo/schema'
+
 interface IUseBankContractorAccountTable {
     ({ organizationId, categoryNotSet }: {
         organizationId: string,
         categoryNotSet: boolean
-    }): { component: JSX.Element, loading: boolean }
+    }): {
+        component: JSX.Element,
+        loading: boolean,
+        selectedRows: Array<BankContractorAccountType>,
+        clearSelection: () => void
+    }
 }
 
 const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organizationId, categoryNotSet }) => {
@@ -32,7 +39,20 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
     const [, bankContractorAccountTableColumns] = useTableColumns()
     const { bankCostItems, loading: bankCostItemsLoading } = useBankCostItemContext()
 
+    const [selectedRows, setSelectedRows] = useState<Array<BankContractorAccountType>>([])
     const isLoading = loading || bankCostItemsLoading
+
+    const handleSelectRow = useCallback((record, checked) => {
+        const selectedKey = record.id
+        if (checked) {
+            setSelectedRows([...selectedRows, record])
+        } else {
+            setSelectedRows(selectedRows.filter(({ id }) => id !== selectedKey))
+        }
+    }, [selectedRows])
+    const clearSelection = () => {
+        setSelectedRows([])
+    }
 
     const component = useMemo(() => (
         <Table
@@ -47,11 +67,15 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
                 return bankContractor
             })}
             columns={bankContractorAccountTableColumns}
-            rowSelection={{ type: 'checkbox' }}
+            rowSelection={{
+                type: 'checkbox',
+                onSelect: handleSelectRow,
+                selectedRowKeys: selectedRows.map(row => row.id),
+            }}
         />
-    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems])
+    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow])
 
-    return { component, loading: isLoading }
+    return { component, loading: isLoading, selectedRows, clearSelection }
 }
 
 export default useBankContractorAccountTable

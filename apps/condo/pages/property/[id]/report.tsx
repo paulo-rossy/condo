@@ -88,15 +88,25 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const CategoryCheckboxTitle = intl.formatMessage({ id: 'pages.banking.categoryNotSet' })
     const UploadFileTitle = intl.formatMessage({ id: 'pages.banking.uploadTransactionsFile' })
     const RemoveReportTitle = intl.formatMessage({ id: 'pages.banking.removeReport' })
+    const EditTitle = intl.formatMessage({ id: 'Edit' })
+    const CancelSelectionTitle = intl.formatMessage({ id: 'pages.condo.ticket.index.CancelSelectedTicket' })
+    const DeleteTitle = intl.formatMessage({ id: 'Delete' })
 
     const [tab, setTab] = useState('receive')
 
     const [categoryNotSet, setCategoryNotSet] = useState(false)
 
-    const { component: bankTransactionsTable, loading: bankTransactionsTableLoading } = useBankTransactionsTable({ bankAccount, type: tab, categoryNotSet })
-    const { component: bankContractorAccountTable } = useBankContractorAccountTable({
-        organizationId, categoryNotSet,
-    })
+    const {
+        component: bankTransactionsTable,
+        loading: bankTransactionsTableLoading,
+        selectedRows: selectedBankTransactions,
+        clearSelection: clearBankTransactionSelection,
+    } = useBankTransactionsTable({ bankAccount, type: tab, categoryNotSet })
+    const {
+        component: bankContractorAccountTable,
+        selectedRows: selectedContractorAccounts,
+        clearSelection: clearBankContractorSelection,
+    } = useBankContractorAccountTable({ organizationId, categoryNotSet })
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
 
@@ -106,6 +116,18 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const handleCategoryFilterChange = useCallback(() => {
         setCategoryNotSet(!categoryNotSet)
     }, [categoryNotSet])
+    const handleClearSelection = useCallback(() => {
+        if (selectedBankTransactions.length) {
+            clearBankTransactionSelection()
+        }
+        if (selectedContractorAccounts.length) {
+            clearBankContractorSelection()
+        }
+    }, [selectedContractorAccounts, selectedBankTransactions, clearBankTransactionSelection, clearBankContractorSelection])
+    const handleTabChange = useCallback((tab) => {
+        handleClearSelection()
+        setTab(tab)
+    }, [handleClearSelection])
 
     const tabContent = useMemo(() => {
         switch (tab) {
@@ -121,7 +143,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         <>
             <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
                 <Col span={24}>
-                    <Tabs activeKey={tab} onChange={setTab}>
+                    <Tabs activeKey={tab} onChange={handleTabChange}>
                         <Tabs.TabPane tab={IncomeTitle} key='receive' />
                         <Tabs.TabPane tab={WithdrawalTitle} key='withdraw' />
                         <Tabs.TabPane tab={ContractorTitle} key='contractors' />
@@ -159,8 +181,23 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
             </Row>
             <ActionBar>
                 <Space size={12}>
-                    <Button type='primary'>{UploadFileTitle}</Button>
-                    <Button type='secondary' danger>{RemoveReportTitle}</Button>
+                    {
+                        selectedBankTransactions.length || selectedContractorAccounts.length
+                            ? (
+                                <>
+                                    <Button type='primary'>{EditTitle}</Button>
+                                    <Button type='secondary' danger>{DeleteTitle}</Button>
+                                    <Button type='secondary' onClick={handleClearSelection}>{CancelSelectionTitle}</Button>
+                                </>
+                            )
+                            : (
+                                <>
+                                    <Button type='primary'>{UploadFileTitle}</Button>
+                                    <Button type='secondary' danger>{RemoveReportTitle}</Button>
+                                </>
+                            )
+                    }
+
                 </Space>
             </ActionBar>
         </>

@@ -1,6 +1,6 @@
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
@@ -18,7 +18,12 @@ interface IUseBankContractorAccountTable {
         bankAccount: BankAccount,
         type: string,
         categoryNotSet: boolean
-    }): { component: JSX.Element, loading: boolean }
+    }): {
+        component: JSX.Element,
+        loading: boolean,
+        selectedRows: Array<BankTransactionType>,
+        clearSelection: () => void
+    }
 }
 
 const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAccount, type, categoryNotSet }) => {
@@ -49,6 +54,17 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
     const [bankTransactionTableColumns] = useTableColumns()
     const { categoryModal, setOpen } = useCategoryModal({ bankTransactions: selectedBankTransactions.current })
 
+    const [selectedRows, setSelectedRows] = useState([])
+    const isLoading = loading || bankCostItemsLoading
+
+    const handleSelectRow = useCallback((record, checked) => {
+        const selectedKey = record.id
+        if (checked) {
+            setSelectedRows([...selectedRows, record])
+        } else {
+            setSelectedRows(selectedRows.filter(({ id }) => id !== selectedKey))
+        }
+    }, [selectedRows])
     const handleRowClick = useCallback((row) => {
         return {
             onClick: () => {
@@ -57,8 +73,9 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
             },
         }
     }, [setOpen])
-
-    const isLoading = loading || bankCostItemsLoading
+    const clearSelection = () => {
+        setSelectedRows([])
+    }
 
     const component = useMemo(() => (
         <>
@@ -74,14 +91,18 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
                     return transaction
                 })}
                 columns={bankTransactionTableColumns}
-                rowSelection={{ type: 'checkbox' }}
+                rowSelection={{
+                    type: 'checkbox',
+                    onSelect: handleSelectRow,
+                    selectedRowKeys: selectedRows.map(row => row.id),
+                }}
                 onRow={handleRowClick}
             />
             {categoryModal}
         </>
-    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, categoryModal, handleRowClick])
+    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, categoryModal, handleRowClick, handleSelectRow, selectedRows])
 
-    return { component, loading: isLoading }
+    return { component, loading: isLoading, selectedRows, clearSelection }
 }
 
 export default useBankContractorAccountTable
