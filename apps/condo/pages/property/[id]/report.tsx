@@ -2,15 +2,15 @@ import { Row, Col, Tabs, Space } from 'antd'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
 
-import BankContractorAccountTable from '@condo/domains/banking/components/BankContractorAccountTable'
 import { BankCostItemProvider } from '@condo/domains/banking/components/BankCostItemContext'
-import BankTransactionsTable from '@condo/domains/banking/components/BankTransactionsTable'
+import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
+import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
 import Input from '@condo/domains/common/components/antd/Input'
@@ -91,9 +91,14 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
 
     const [tab, setTab] = useState('receive')
 
-    const [search, changeSearch, resetSearch] = useSearch<{ search?: string }>()
     const [categoryNotSet, setCategoryNotSet] = useState(false)
-    // const [dateRange, setDateRange] = useDateRangeSearch('date', loading)
+
+    const { component: bankTransactionsTable, loading: bankTransactionsTableLoading } = useBankTransactionsTable({ bankAccount, type: tab, categoryNotSet })
+    const { component: bankContractorAccountTable } = useBankContractorAccountTable({
+        organizationId, categoryNotSet,
+    })
+    const [search, changeSearch] = useSearch<{ search?: string }>()
+    const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
 
     const handleSearchChange = useCallback((e) => {
         changeSearch(e.target.value)
@@ -105,13 +110,12 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const tabContent = useMemo(() => {
         switch (tab) {
             case 'receive':
-                return <BankTransactionsTable bankAccount={bankAccount} type={tab} categoryNotSet={categoryNotSet} />
             case 'withdraw':
-                return <BankTransactionsTable bankAccount={bankAccount} type={tab} categoryNotSet={categoryNotSet} />
+                return bankTransactionsTable
             case 'contractors':
-                return <BankContractorAccountTable organizationId={organizationId} categoryNotSet={categoryNotSet} />
+                return bankContractorAccountTable
         }
-    }, [tab, bankAccount, organizationId, categoryNotSet])
+    }, [tab, bankContractorAccountTable, bankTransactionsTable])
 
     return (
         <>
@@ -134,8 +138,8 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                             {tab !== 'contractors' && (
                                 <Col span={6}>
                                     <DateRangePicker
-                                        // value={dateRange}
-                                        // onChange={setDateRange}
+                                        value={dateRange}
+                                        onChange={setDateRange}
                                     />
                                 </Col>
                             )}
