@@ -1,8 +1,10 @@
+import { Space } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
 import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table'
@@ -50,30 +52,41 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
             setSelectedRows(selectedRows.filter(({ id }) => id !== selectedKey))
         }
     }, [selectedRows])
+    const handleSelectAll = useCallback((checked) => {
+        if (checked) {
+            setSelectedRows(bankContractorAccounts)
+        } else {
+            setSelectedRows([])
+        }
+    }, [bankContractorAccounts])
     const clearSelection = () => {
         setSelectedRows([])
     }
 
     const component = useMemo(() => (
-        <Table
-            loading={isLoading}
-            dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
-                const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
+        <Space direction='vertical' size={40}>
+            <CategoryProgress data={bankContractorAccounts} entity='contractor' />
+            <Table
+                loading={isLoading}
+                dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
+                    const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
 
-                if (costItem) {
-                    bankContractor.costItem = costItem
-                }
+                    if (costItem) {
+                        bankContractor.costItem = costItem
+                    }
 
-                return bankContractor
-            })}
-            columns={bankContractorAccountTableColumns}
-            rowSelection={{
-                type: 'checkbox',
-                onSelect: handleSelectRow,
-                selectedRowKeys: selectedRows.map(row => row.id),
-            }}
-        />
-    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow])
+                    return bankContractor
+                })}
+                columns={bankContractorAccountTableColumns}
+                rowSelection={{
+                    type: 'checkbox',
+                    onSelect: handleSelectRow,
+                    onSelectAll: handleSelectAll,
+                    selectedRowKeys: selectedRows.map(row => row.id),
+                }}
+            />
+        </Space>
+    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll])
 
     return { component, loading: isLoading, selectedRows, clearSelection }
 }

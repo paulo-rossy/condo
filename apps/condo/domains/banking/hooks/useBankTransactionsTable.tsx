@@ -1,8 +1,10 @@
+import { Space } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
@@ -12,11 +14,12 @@ import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
 import type { BankAccount, BankTransactionWhereInput, BankTransaction as BankTransactionType } from '@app/condo/schema'
+import type { PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 
 interface IUseBankContractorAccountTable {
     ({ bankAccount, type, categoryNotSet }: {
         bankAccount: BankAccount,
-        type: string,
+        type: PropertyReportTypes,
         categoryNotSet: boolean
     }): {
         component: JSX.Element,
@@ -35,7 +38,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
 
     const selectedBankTransactions = useRef<BankTransactionType[]>([])
 
-    const whereQuery: BankTransactionWhereInput = type === 'withdraw'
+    const whereQuery: BankTransactionWhereInput = type === 'withdrawal'
         ? { dateReceived: null }
         : { dateWithdrawed: null }
     const nullCategoryFilter = categoryNotSet ? { costItem_is_null: true } : {}
@@ -73,12 +76,20 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
             },
         }
     }, [setOpen])
+    const handleSelectAll = useCallback((checked) => {
+        if (checked) {
+            setSelectedRows(bankTransactions)
+        } else {
+            setSelectedRows([])
+        }
+    }, [bankTransactions])
     const clearSelection = () => {
         setSelectedRows([])
     }
 
     const component = useMemo(() => (
-        <>
+        <Space direction='vertical' size={40}>
+            <CategoryProgress data={bankTransactions} entity={type} />
             <Table
                 loading={isLoading}
                 dataSource={bankTransactions.map(({ ...transaction }) => {
@@ -94,13 +105,14 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
                 rowSelection={{
                     type: 'checkbox',
                     onSelect: handleSelectRow,
+                    onSelectAll: handleSelectAll,
                     selectedRowKeys: selectedRows.map(row => row.id),
                 }}
                 onRow={handleRowClick}
             />
             {categoryModal}
-        </>
-    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, categoryModal, handleRowClick, handleSelectRow, selectedRows])
+        </Space>
+    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, categoryModal, handleRowClick, handleSelectRow, handleSelectAll, selectedRows, type])
 
     return { component, loading: isLoading, selectedRows, clearSelection }
 }

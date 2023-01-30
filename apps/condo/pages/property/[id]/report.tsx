@@ -8,7 +8,8 @@ import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
 
-import { BankCostItemProvider } from '@condo/domains/banking/components/BankCostItemContext'
+
+import { BankCostItemProvider, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
@@ -35,6 +36,7 @@ import type { RowProps } from 'antd'
 
 const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [24, 20]
 const PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER: RowProps['gutter'] = [0, 60]
+const PROPERTY_REPORT_PAGE_ROW_TABLE_GUTTER: RowProps['gutter'] = [0, 40]
 const DATE_DISPLAY_FORMAT = {
     day: 'numeric',
     month: 'numeric',
@@ -92,7 +94,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const CancelSelectionTitle = intl.formatMessage({ id: 'pages.condo.ticket.index.CancelSelectedTicket' })
     const DeleteTitle = intl.formatMessage({ id: 'Delete' })
 
-    const [tab, setTab] = useState('receive')
+    const [tab, setTab] = useState<PropertyReportTypes>('income')
 
     const [categoryNotSet, setCategoryNotSet] = useState(false)
 
@@ -124,30 +126,32 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
             clearBankContractorSelection()
         }
     }, [selectedContractorAccounts, selectedBankTransactions, clearBankTransactionSelection, clearBankContractorSelection])
-    const handleTabChange = useCallback((tab) => {
+    const handleTabChange = useCallback((tab: PropertyReportTypes) => {
         handleClearSelection()
         setTab(tab)
     }, [handleClearSelection])
 
     const tabContent = useMemo(() => {
         switch (tab) {
-            case 'receive':
-            case 'withdraw':
+            case 'income':
+            case 'withdrawal':
                 return bankTransactionsTable
-            case 'contractors':
+            case 'contractor':
                 return bankContractorAccountTable
         }
     }, [tab, bankContractorAccountTable, bankTransactionsTable])
 
     return (
         <>
-            <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
+            <Row gutter={PROPERTY_REPORT_PAGE_ROW_TABLE_GUTTER}>
                 <Col span={24}>
                     <Tabs activeKey={tab} onChange={handleTabChange}>
-                        <Tabs.TabPane tab={IncomeTitle} key='receive' />
-                        <Tabs.TabPane tab={WithdrawalTitle} key='withdraw' />
-                        <Tabs.TabPane tab={ContractorTitle} key='contractors' />
+                        <Tabs.TabPane tab={IncomeTitle} key='income' />
+                        <Tabs.TabPane tab={WithdrawalTitle} key='withdrawal' />
+                        <Tabs.TabPane tab={ContractorTitle} key='contractor' />
                     </Tabs>
+                </Col>
+                <Col span={24}>
                     <TableFiltersContainer>
                         <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER} align='middle'>
                             <Col span={6}>
@@ -157,7 +161,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                                     onChange={handleSearchChange}
                                 />
                             </Col>
-                            {tab !== 'contractors' && (
+                            {tab !== 'contractor' && (
                                 <Col span={6}>
                                     <DateRangePicker
                                         value={dateRange}

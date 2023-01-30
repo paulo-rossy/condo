@@ -8,6 +8,7 @@ interface IBankCostItemContext {
     bankCostItems: Array<BankCostItemType>
     loading: boolean
 }
+export type PropertyReportTypes = 'income' | 'withdrawal' | 'contractor'
 
 const BankCostItemContext = createContext<IBankCostItemContext>({ bankCostItems: [], loading: false })
 
