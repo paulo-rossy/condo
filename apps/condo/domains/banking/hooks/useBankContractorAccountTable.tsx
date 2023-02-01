@@ -3,14 +3,20 @@ import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { useMutation } from '@open-condo/next/apollo'
+
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
+import { BankContractorAccount as BankContractorAccountGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
 import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table/Index'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
-import type { BankContractorAccount as BankContractorAccountType } from '@app/condo/schema'
+import type {
+    BankContractorAccount as BankContractorAccountType,
+    MutationUpdateBankContractorAccountsArgs,
+} from '@app/condo/schema'
 import type { RowProps } from 'antd'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
@@ -23,7 +29,8 @@ interface IUseBankContractorAccountTable {
         component: JSX.Element,
         loading: boolean,
         selectedRows: Array<BankContractorAccountType>,
-        clearSelection: () => void
+        clearSelection: () => void,
+        updateSelected: (args: unknown) => Promise<unknown>
     }
 }
 
@@ -33,7 +40,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
     const pageIndex = getPageIndexFromOffset(offset, DEFAULT_PAGE_SIZE)
     const nullCategoryFilter = categoryNotSet ? { costItem_is_null: true } : {}
 
-    const { objs: bankContractorAccounts, loading } = BankContractorAccount.useObjects({
+    const { objs: bankContractorAccounts, loading, refetch } = BankContractorAccount.useObjects({
         where: {
             organization: { id: organizationId },
             ...nullCategoryFilter,
@@ -41,11 +48,14 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
         first: DEFAULT_PAGE_SIZE,
         skip: (pageIndex - 1) * DEFAULT_PAGE_SIZE,
     })
+    const [updateSelected, { loading: updateLoading }] = useMutation(BankContractorAccountGQL.UPDATE_OBJS_MUTATION, {
+        onCompleted: () => refetch(),
+    })
     const [, bankContractorAccountTableColumns] = useTableColumns()
     const { bankCostItems, loading: bankCostItemsLoading } = useBankCostItemContext()
 
     const [selectedRows, setSelectedRows] = useState<Array<BankContractorAccountType>>([])
-    const isLoading = loading || bankCostItemsLoading
+    const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const handleSelectRow = useCallback((record, checked) => {
         const selectedKey = record.id
@@ -95,7 +105,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
         </Row>
     ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll])
 
-    return { component, loading: isLoading, selectedRows, clearSelection }
+    return { component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }
 
 export default useBankContractorAccountTable

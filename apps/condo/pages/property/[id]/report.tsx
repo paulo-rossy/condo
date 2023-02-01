@@ -111,6 +111,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         component: bankContractorAccountTable,
         selectedRows: selectedContractorAccounts,
         clearSelection: clearBankContractorSelection,
+        updateSelected: updateBankContractors,
     } = useBankContractorAccountTable({ organizationId, categoryNotSet })
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
@@ -141,7 +142,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         setOpen(true)
     }, [setOpen])
     const handleDeleteSelected = useCallback(() => {
-        if (selectedBankTransactions.length) {
+        if (tab !== 'contractor' && selectedBankTransactions.length) {
             // TODO: error handling!!!
             updateBankTransactions({
                 variables: {
@@ -159,12 +160,27 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
             }).then(result => {
                 console.log('result', result)
             }).catch(e => {
-                console.group('Error delete bank transaction')
                 console.log(e)
-                console.groupEnd()
+            })
+        } else if (selectedContractorAccounts.length) {
+            updateBankContractors({
+                variables: {
+                    data: selectedContractorAccounts.map(contractor => {
+                        return {
+                            id: contractor.id,
+                            data: {
+                                deletedAt: new Date().toDateString(),
+                            },
+                        }
+                    }),
+                },
+            }).then(result => {
+                console.log(result)
+            }).catch(e => {
+                console.log(e)
             })
         }
-    }, [selectedBankTransactions, updateBankTransactions])
+    }, [tab, selectedBankTransactions, updateBankTransactions, selectedContractorAccounts, updateBankContractors])
 
     const tabContent = useMemo(() => {
         switch (tab) {
