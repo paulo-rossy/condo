@@ -12,12 +12,14 @@ import { Typography, Button, Checkbox } from '@open-condo/ui'
 import { BankCostItemProvider, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
+import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
 import Input from '@condo/domains/common/components/antd/Input'
 import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
 import { PageContent, PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
 import LoadingOrErrorPage from '@condo/domains/common/components/containers/LoadingOrErrorPage'
+import { DeleteButtonWithConfirmModal } from '@condo/domains/common/components/DeleteButtonWithConfirmModal'
 import { BasicEmptyListView } from '@condo/domains/common/components/EmptyListView'
 import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/SberIcon'
 import { Loader } from '@condo/domains/common/components/Loader'
@@ -103,6 +105,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         loading: bankTransactionsTableLoading,
         selectedRows: selectedBankTransactions,
         clearSelection: clearBankTransactionSelection,
+        updateSelected: updateBankTransactions,
     } = useBankTransactionsTable({ bankAccount, type: tab, categoryNotSet })
     const {
         component: bankContractorAccountTable,
@@ -111,6 +114,10 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     } = useBankContractorAccountTable({ organizationId, categoryNotSet })
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
+    const { categoryModal, setOpen } = useCategoryModal({
+        bankTransactions: selectedBankTransactions,
+        bankContractorAccounts: selectedContractorAccounts,
+    })
 
     const handleSearchChange = useCallback((e) => {
         changeSearch(e.target.value)
@@ -130,6 +137,34 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         handleClearSelection()
         setTab(tab)
     }, [handleClearSelection])
+    const handleEditSelectedRows = useCallback(() => {
+        setOpen(true)
+    }, [setOpen])
+    const handleDeleteSelected = useCallback(() => {
+        if (selectedBankTransactions.length) {
+            // TODO: error handling!!!
+            updateBankTransactions({
+                variables: {
+                    // TODO: fix interface type
+                    // @ts-ignore
+                    data: selectedBankTransactions.map(transaction => {
+                        return {
+                            id: transaction.id,
+                            data: {
+                                deletedAt: new Date().toDateString(),
+                            },
+                        }
+                    }),
+                },
+            }).then(result => {
+                console.log('result', result)
+            }).catch(e => {
+                console.group('Error delete bank transaction')
+                console.log(e)
+                console.groupEnd()
+            })
+        }
+    }, [selectedBankTransactions, updateBankTransactions])
 
     const tabContent = useMemo(() => {
         switch (tab) {
@@ -181,6 +216,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                 </Col>
                 <Col span={24}>
                     {tabContent}
+                    {categoryModal}
                 </Col>
             </Row>
             <ActionBar>
@@ -189,9 +225,26 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                         selectedBankTransactions.length || selectedContractorAccounts.length
                             ? (
                                 <>
-                                    <Button type='primary'>{EditTitle}</Button>
-                                    <Button type='secondary' danger>{DeleteTitle}</Button>
-                                    <Button type='secondary' onClick={handleClearSelection}>{CancelSelectionTitle}</Button>
+                                    <Button
+                                        type='primary'
+                                        onClick={handleEditSelectedRows}
+                                    >
+                                        {EditTitle}
+                                    </Button>
+                                    {/*<DeleteButtonWithConfirmModal />*/}
+                                    <Button
+                                        type='secondary'
+                                        danger
+                                        onClick={handleDeleteSelected}
+                                    >
+                                        {DeleteTitle}
+                                    </Button>
+                                    <Button
+                                        type='secondary'
+                                        onClick={handleClearSelection}
+                                    >
+                                        {CancelSelectionTitle}
+                                    </Button>
                                 </>
                             )
                             : (

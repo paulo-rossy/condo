@@ -1,4 +1,4 @@
-import { Space } from 'antd'
+import { Col, Row } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -7,10 +7,13 @@ import { useBankCostItemContext } from '@condo/domains/banking/components/BankCo
 import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
-import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table'
+import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table/Index'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
 import type { BankContractorAccount as BankContractorAccountType } from '@app/condo/schema'
+import type { RowProps } from 'antd'
+
+const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
 
 interface IUseBankContractorAccountTable {
     ({ organizationId, categoryNotSet }: {
@@ -64,28 +67,32 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
     }
 
     const component = useMemo(() => (
-        <Space direction='vertical' size={40}>
-            <CategoryProgress data={bankContractorAccounts} entity='contractor' />
-            <Table
-                loading={isLoading}
-                dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
-                    const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
+        <Row gutter={TABLE_ROW_GUTTER}>
+            <Col span={24}>
+                <CategoryProgress data={bankContractorAccounts} entity='contractor' />
+            </Col>
+            <Col span={24}>
+                <Table
+                    loading={isLoading}
+                    dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
+                        const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
 
-                    if (costItem) {
-                        bankContractor.costItem = costItem
-                    }
+                        if (costItem) {
+                            bankContractor.costItem = costItem
+                        }
 
-                    return bankContractor
-                })}
-                columns={bankContractorAccountTableColumns}
-                rowSelection={{
-                    type: 'checkbox',
-                    onSelect: handleSelectRow,
-                    onSelectAll: handleSelectAll,
-                    selectedRowKeys: selectedRows.map(row => row.id),
-                }}
-            />
-        </Space>
+                        return bankContractor
+                    })}
+                    columns={bankContractorAccountTableColumns}
+                    rowSelection={{
+                        type: 'checkbox',
+                        onSelect: handleSelectRow,
+                        onSelectAll: handleSelectAll,
+                        selectedRowKeys: selectedRows.map(row => row.id),
+                    }}
+                />
+            </Col>
+        </Row>
     ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll])
 
     return { component, loading: isLoading, selectedRows, clearSelection }

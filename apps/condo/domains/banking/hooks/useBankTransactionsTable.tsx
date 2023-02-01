@@ -1,20 +1,36 @@
-import { Space } from 'antd'
+import { Row, Col } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
+
+import { useMutation } from '@open-condo/next/apollo'
 
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
-import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
+import { BankTransaction as BankTransactionGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
 import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
-import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table'
+import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table/Index'
 import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
-import type { BankAccount, BankTransactionWhereInput, BankTransaction as BankTransactionType } from '@app/condo/schema'
+import type {
+    BankAccount,
+    BankTransactionWhereInput,
+    BankTransaction as BankTransactionType,
+    MutationUpdateBankTransactionsArgs,
+} from '@app/condo/schema'
 import type { PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
+import type { RowProps } from 'antd'
+
+const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
+
+interface BaseMutationArgs<T> {
+    variables: {
+        data: T
+    }
+}
 
 interface IUseBankContractorAccountTable {
     ({ bankAccount, type, categoryNotSet }: {
@@ -25,18 +41,19 @@ interface IUseBankContractorAccountTable {
         component: JSX.Element,
         loading: boolean,
         selectedRows: Array<BankTransactionType>,
-        clearSelection: () => void
+        clearSelection: () => void,
+        updateSelected: (args: BaseMutationArgs<MutationUpdateBankTransactionsArgs>) => Promise<unknown>
     }
 }
 
-const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAccount, type, categoryNotSet }) => {
+const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) => {
     const router = useRouter()
     const { filters, offset } = parseQuery(router.query)
     const queryMeta = useTableFilters()
     const { filtersToWhere } = useQueryMappers(queryMeta, [])
     const { bankCostItems, loading: bankCostItemsLoading } = useBankCostItemContext()
 
-    const selectedBankTransactions = useRef<BankTransactionType[]>([])
+    const { bankAccount, type, categoryNotSet } = props
 
     const whereQuery: BankTransactionWhereInput = type === 'withdrawal'
         ? { dateReceived: null }
@@ -44,7 +61,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
     const nullCategoryFilter = categoryNotSet ? { costItem_is_null: true } : {}
     const pageIndex = getPageIndexFromOffset(offset, DEFAULT_PAGE_SIZE)
 
-    const { objs: bankTransactions, loading } = BankTransaction.useObjects({
+    const { objs: bankTransactions, loading, refetch } = BankTransaction.useObjects({
         where: {
             account: { id: bankAccount.id },
             ...nullCategoryFilter,
@@ -54,11 +71,13 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
         first: DEFAULT_PAGE_SIZE,
         skip: (pageIndex - 1) * DEFAULT_PAGE_SIZE,
     })
+    const [updateSelected, { loading: updateLoading }] = useMutation(BankTransactionGQL.UPDATE_OBJS_MUTATION, {
+        onCompleted: () => refetch(),
+    })
     const [bankTransactionTableColumns] = useTableColumns()
-    const { categoryModal, setOpen } = useCategoryModal({ bankTransactions: selectedBankTransactions.current })
 
     const [selectedRows, setSelectedRows] = useState([])
-    const isLoading = loading || bankCostItemsLoading
+    const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const handleSelectRow = useCallback((record, checked) => {
         const selectedKey = record.id
@@ -71,11 +90,10 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
     const handleRowClick = useCallback((row) => {
         return {
             onClick: () => {
-                selectedBankTransactions.current = [row]
-                setOpen(true)
+                console.log('need to open modal with clicked row ', row)
             },
         }
-    }, [setOpen])
+    }, [])
     const handleSelectAll = useCallback((checked) => {
         if (checked) {
             setSelectedRows(bankTransactions)
@@ -88,33 +106,36 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ bankAcc
     }
 
     const component = useMemo(() => (
-        <Space direction='vertical' size={40}>
-            <CategoryProgress data={bankTransactions} entity={type} />
-            <Table
-                loading={isLoading}
-                dataSource={bankTransactions.map(({ ...transaction }) => {
-                    const costItem = bankCostItems.find(costItem => costItem.id === get(transaction, 'costItem.id'))
+        <Row gutter={TABLE_ROW_GUTTER}>
+            <Col span={24}>
+                <CategoryProgress data={bankTransactions} entity={type} />
+            </Col>
+            <Col span={24}>
+                <Table
+                    loading={isLoading}
+                    dataSource={bankTransactions.map(({ ...transaction }) => {
+                        const costItem = bankCostItems.find(costItem => costItem.id === get(transaction, 'costItem.id'))
 
-                    if (costItem) {
-                        transaction.costItem = costItem
-                    }
+                        if (costItem) {
+                            transaction.costItem = costItem
+                        }
 
-                    return transaction
-                })}
-                columns={bankTransactionTableColumns}
-                rowSelection={{
-                    type: 'checkbox',
-                    onSelect: handleSelectRow,
-                    onSelectAll: handleSelectAll,
-                    selectedRowKeys: selectedRows.map(row => row.id),
-                }}
-                onRow={handleRowClick}
-            />
-            {categoryModal}
-        </Space>
-    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, categoryModal, handleRowClick, handleSelectRow, handleSelectAll, selectedRows, type])
+                        return transaction
+                    })}
+                    columns={bankTransactionTableColumns}
+                    rowSelection={{
+                        type: 'checkbox',
+                        onSelect: handleSelectRow,
+                        onSelectAll: handleSelectAll,
+                        selectedRowKeys: selectedRows.map(row => row.id),
+                    }}
+                    onRow={handleRowClick}
+                />
+            </Col>
+        </Row>
+    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, handleRowClick, handleSelectRow, handleSelectAll, selectedRows, type])
 
-    return { component, loading: isLoading, selectedRows, clearSelection }
+    return { component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }
 
 export default useBankContractorAccountTable
