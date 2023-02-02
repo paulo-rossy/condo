@@ -13,6 +13,8 @@ import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema
 import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table/Index'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
+import { BaseMutationArgs } from './useBankTransactionsTable'
+
 import type {
     BankContractorAccount as BankContractorAccountType,
     MutationUpdateBankContractorAccountsArgs,
@@ -20,6 +22,8 @@ import type {
 import type { RowProps } from 'antd'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
+
+export type UpdateSelectedContractors = (args: BaseMutationArgs<MutationUpdateBankContractorAccountsArgs>) => Promise<unknown>
 
 interface IUseBankContractorAccountTable {
     ({ organizationId, categoryNotSet }: {
@@ -30,7 +34,7 @@ interface IUseBankContractorAccountTable {
         loading: boolean,
         selectedRows: Array<BankContractorAccountType>,
         clearSelection: () => void,
-        updateSelected: (args: unknown) => Promise<unknown>
+        updateSelected: UpdateSelectedContractors
     }
 }
 

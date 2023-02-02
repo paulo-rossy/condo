@@ -26,11 +26,11 @@ import type { RowProps } from 'antd'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
 
-interface BaseMutationArgs<T> {
-    variables: {
-        data: T
-    }
+export interface BaseMutationArgs<T> {
+    variables: T
 }
+
+export type UpdateSelectedTransactions = (args: BaseMutationArgs<MutationUpdateBankTransactionsArgs>) => Promise<unknown>
 
 interface IUseBankContractorAccountTable {
     ({ bankAccount, type, categoryNotSet }: {
@@ -42,7 +42,7 @@ interface IUseBankContractorAccountTable {
         loading: boolean,
         selectedRows: Array<BankTransactionType>,
         clearSelection: () => void,
-        updateSelected: (args: BaseMutationArgs<MutationUpdateBankTransactionsArgs>) => Promise<unknown>
+        updateSelected: UpdateSelectedTransactions
     }
 }
 
@@ -90,6 +90,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     const handleRowClick = useCallback((row) => {
         return {
             onClick: () => {
+                // TODO: open modal with this row
                 console.log('need to open modal with clicked row ', row)
             },
         }

@@ -9,32 +9,46 @@ import { useIntl } from '@open-condo/next/intl'
 import { Modal, Typography, List, RadioGroup, Space, Button } from '@open-condo/ui'
 import type { RadioGroupProps } from '@open-condo/ui'
 
-import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+import { useBankCostItemContext, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 
-import type { BankTransaction as BankTransactionType, BankContractorAccount as BankContractorAccountType } from '@app/condo/schema'
+import { UpdateSelectedContractors } from './useBankContractorAccountTable'
+import { UpdateSelectedTransactions } from './useBankTransactionsTable'
+
+import type {
+    BankTransaction as BankTransactionType,
+    BankContractorAccount as BankContractorAccountType,
+} from '@app/condo/schema'
 import type { RowProps } from 'antd'
 
 const CATEGORY_MODAL_ROW_GUTTER: RowProps['gutter'] = [0, 40]
 
 interface IUseCategoryModal {
-    ({ bankTransactions }: {
+    ({ bankTransactions, bankContractorAccounts, type }: {
         bankTransactions?: Array<BankTransactionType>,
-        bankContractorAccounts?: Array<BankContractorAccountType>
-
+        bankContractorAccounts?: Array<BankContractorAccountType>,
+        type: PropertyReportTypes
+        updateSelected: UpdateSelectedTransactions | UpdateSelectedContractors
     }): {
         categoryModal: JSX.Element,
         setOpen: React.Dispatch<React.SetStateAction<boolean>>
     }
 }
 
-export const useCategoryModal: IUseCategoryModal = (props) => {
+export const useCategoryModal: IUseCategoryModal = ({
+    bankTransactions = [], bankContractorAccounts = [], type, updateSelected,
+}) => {
     const intl = useIntl()
-    const ModalTitle = intl.formatMessage({ id: 'global.contractor' }, { isSingular: true })
+    const TransactionTitle = intl.formatMessage({ id: 'global.transaction' }, { isSingular: bankTransactions.length === 1 })
+    const IncomeTitle = intl.formatMessage({ id: 'global.income' }, { isSingular: false })
+    const WithdrawalTitle = intl.formatMessage({ id: 'global.withdrawal' }, { isSingular: false })
+    const ContractorTitle = intl.formatMessage({ id: 'global.contractor' }, { isSingular: true })
     const BankAccountTitle = intl.formatMessage({ id: 'global.bankAccount' })
     const ChooseCategoryTitle = intl.formatMessage({ id: 'pages.banking.chooseCategory' })
+    const ContractorsSelectedTitle = intl.formatMessage({ id: 'pages.banking.categoryModal.contractorsSelected' })
+    const TransactionsSelectedTitle = intl.formatMessage({ id: 'pages.banking.categoryModal.transactionsSelected' })
+    const PaymentPurposeTitle = intl.formatMessage({ id: 'global.paymentPurpose' })
+    const SumTitle = intl.formatMessage({ id: 'global.sum' })
     const SaveTitle = intl.formatMessage({ id: 'Save' })
-
-    const { bankTransactions = [], bankContractorAccounts = [] } = props
 
     const { bankCostItems, loading } = useBankCostItemContext()
 
@@ -64,44 +78,111 @@ export const useCategoryModal: IUseCategoryModal = (props) => {
     const onGroupChange = useCallback((event) => {
         setSelectedCostItem(event.target.value)
     }, [])
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         // TODO: add save method based on received entity (bankTransactions or bankContractorAccounts)
-        console.log(selectedCostItem)
-    }, [selectedCostItem])
+        if (type === 'contractor') {
+            await updateSelected({
+                variables: {
+                    data: bankContractorAccounts.map(contractor => {
+                        return {
+                            id: contractor.id,
+                            data: {
+                                costItem: { connect: { id: selectedCostItem } },
+                            },
+                        }
+                    }),
+                },
+            })
+        } else if (type === 'income' || type === 'withdrawal') {
+            await updateSelected({
+                variables: {
+                    data: bankTransactions.map(transaction => {
+                        return {
+                            id: transaction.id,
+                            data: {
+                                costItem: { connect: { id: selectedCostItem } },
+                            },
+                        }
+                    }),
+                },
+            })
+        }
 
-    const categoryModal = useMemo(() => (
-        <Modal
-            title={ModalTitle}
-            open={open}
-            onCancel={closeModal}
-            footer={<Button
-                type='primary'
-                disabled={isNull(selectedCostItem) || loading}
-                onClick={handleSave}>
-                {SaveTitle}
-            </Button>}
-        >
-            <Row gutter={CATEGORY_MODAL_ROW_GUTTER}>
-                <Col span={24}>
-                    <List dataSource={[{
-                        label: BankAccountTitle,
-                        value: String(bankTransactions.length === 1 ? get(bankTransactions, '0.account.number') : bankTransactions.length),
-                    }]} />
-                </Col>
-                <Col span={24}>
-                    <Space direction='vertical' size={24}>
-                        <Typography.Title level={3}>{ChooseCategoryTitle}</Typography.Title>
-                        <RadioGroup
-                            onChange={onGroupChange}
-                            icon={<ChevronDown size='small' />}
-                            groups={groups.current}
-                        />
-                    </Space>
-                </Col>
-            </Row>
-        </Modal>
-    ), [open, closeModal, ModalTitle, BankAccountTitle, ChooseCategoryTitle, bankTransactions,
-        onGroupChange, handleSave, selectedCostItem, SaveTitle])
+        setOpen(false)
+        setSelectedCostItem(null)
+    }, [selectedCostItem, type, bankContractorAccounts, bankTransactions, updateSelected])
+
+
+    const categoryModal = useMemo(() => {
+        let modalTitle
+        const listDataSource = []
+
+        if (type === 'income' || type === 'withdrawal') {
+            const totalAmount = intl.formatNumber(
+                bankTransactions.reduce((prev, current) =>  prev + parseFloat(current.amount), 0),
+                { style: 'currency', currency: get(bankTransactions, '0.currencyCode') }
+            )
+
+            if (bankTransactions.length === 1) {
+                modalTitle = `${TransactionTitle} №${get(bankTransactions, '0.number')}, ${get(bankTransactions, '0.date')}`
+                listDataSource.push(
+                    { label: PaymentPurposeTitle, value: get(bankTransactions, '0.purpose', '-') },
+                    { label: SumTitle, value: totalAmount }
+                )
+            } else {
+                modalTitle = `${TransactionTitle}, ${type === 'income' ? IncomeTitle : WithdrawalTitle}`
+                listDataSource.push(
+                    { label: TransactionsSelectedTitle, value: bankTransactions.length },
+                    { label: SumTitle, value: totalAmount },
+                )
+            }
+        } else if (type === 'contractor') {
+            if (bankContractorAccounts.length === 1) {
+                modalTitle = `${ContractorTitle} ${get(bankContractorAccounts, '0.name')}`
+                listDataSource.push({
+                    label: BankAccountTitle,
+                    value: get(bankContractorAccounts, '0.number'),
+                })
+            } else {
+                listDataSource.push({
+                    label: ContractorsSelectedTitle,
+                    value: String(bankContractorAccounts.length),
+                })
+            }
+        }
+
+        return (
+            <Modal
+                title={modalTitle}
+                open={open}
+                onCancel={closeModal}
+                footer={<Button
+                    type='primary'
+                    disabled={isNull(selectedCostItem) || loading}
+                    onClick={handleSave}>
+                    {SaveTitle}
+                </Button>}
+            >
+                <Row gutter={CATEGORY_MODAL_ROW_GUTTER}>
+                    <Col span={24}>
+                        <List dataSource={listDataSource} />
+                    </Col>
+                    <Col span={24}>
+                        <Space direction='vertical' size={24}>
+                            <Typography.Title level={3}>{ChooseCategoryTitle}</Typography.Title>
+                            <RadioGroup
+                                onChange={onGroupChange}
+                                icon={<ChevronDown size='small' />}
+                                groups={groups.current}
+                            />
+                        </Space>
+                    </Col>
+                </Row>
+            </Modal>
+        )
+    }, [open, closeModal, ContractorTitle, PaymentPurposeTitle, BankAccountTitle, ChooseCategoryTitle, bankTransactions,
+        onGroupChange, handleSave, selectedCostItem, bankContractorAccounts, loading, SaveTitle, type, intl, SumTitle,
+        TransactionTitle, WithdrawalTitle, IncomeTitle, ContractorsSelectedTitle, TransactionsSelectedTitle])
 
     return { categoryModal, setOpen }
 }

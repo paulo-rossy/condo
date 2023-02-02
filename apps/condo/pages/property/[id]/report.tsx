@@ -96,10 +96,11 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const CancelSelectionTitle = intl.formatMessage({ id: 'pages.condo.ticket.index.CancelSelectedTicket' })
     const DeleteTitle = intl.formatMessage({ id: 'Delete' })
 
+    // Local state
     const [tab, setTab] = useState<PropertyReportTypes>('income')
-
     const [categoryNotSet, setCategoryNotSet] = useState(false)
 
+    // Hooks
     const {
         component: bankTransactionsTable,
         loading: bankTransactionsTableLoading,
@@ -118,8 +119,11 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const { categoryModal, setOpen } = useCategoryModal({
         bankTransactions: selectedBankTransactions,
         bankContractorAccounts: selectedContractorAccounts,
+        type: tab,
+        updateSelected: tab === 'contractor' ? updateBankContractors : updateBankTransactions,
     })
 
+    // Handlers
     const handleSearchChange = useCallback((e) => {
         changeSearch(e.target.value)
     }, [changeSearch])
@@ -141,13 +145,10 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const handleEditSelectedRows = useCallback(() => {
         setOpen(true)
     }, [setOpen])
-    const handleDeleteSelected = useCallback(() => {
+    const handleDeleteSelected = useCallback(async () => {
         if (tab !== 'contractor' && selectedBankTransactions.length) {
-            // TODO: error handling!!!
-            updateBankTransactions({
+            await updateBankTransactions({
                 variables: {
-                    // TODO: fix interface type
-                    // @ts-ignore
                     data: selectedBankTransactions.map(transaction => {
                         return {
                             id: transaction.id,
@@ -157,13 +158,9 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                         }
                     }),
                 },
-            }).then(result => {
-                console.log('result', result)
-            }).catch(e => {
-                console.log(e)
             })
         } else if (selectedContractorAccounts.length) {
-            updateBankContractors({
+            await updateBankContractors({
                 variables: {
                     data: selectedContractorAccounts.map(contractor => {
                         return {
@@ -174,14 +171,11 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                         }
                     }),
                 },
-            }).then(result => {
-                console.log(result)
-            }).catch(e => {
-                console.log(e)
             })
         }
     }, [tab, selectedBankTransactions, updateBankTransactions, selectedContractorAccounts, updateBankContractors])
 
+    // Local render variables
     const tabContent = useMemo(() => {
         switch (tab) {
             case 'income':
@@ -191,6 +185,13 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                 return bankContractorAccountTable
         }
     }, [tab, bankContractorAccountTable, bankTransactionsTable])
+
+    const deleteModalTitle = selectedBankTransactions.length
+        ? intl.formatMessage({ id: 'pages.banking.removeModal.transaction.title' }, { count: selectedBankTransactions.length })
+        : intl.formatMessage({ id: 'pages.banking.removeModal.contractor.title' }, { count: selectedContractorAccounts.length })
+    const deleteModalDescription = selectedBankTransactions.length
+        ? intl.formatMessage({ id: 'pages.banking.removeModal.transaction.description' }, { count: selectedBankTransactions.length })
+        : intl.formatMessage({ id: 'pages.banking.removeModal.contractor.description' }, { count: selectedContractorAccounts.length })
 
     return (
         <>
@@ -247,14 +248,14 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                                     >
                                         {EditTitle}
                                     </Button>
-                                    {/*<DeleteButtonWithConfirmModal />*/}
-                                    <Button
-                                        type='secondary'
-                                        danger
-                                        onClick={handleDeleteSelected}
-                                    >
-                                        {DeleteTitle}
-                                    </Button>
+                                    <DeleteButtonWithConfirmModal
+                                        title={deleteModalTitle}
+                                        message={deleteModalDescription}
+                                        okButtonLabel={DeleteTitle}
+                                        buttonContent={DeleteTitle}
+                                        action={handleDeleteSelected}
+                                        showCancelButton
+                                    />
                                     <Button
                                         type='secondary'
                                         onClick={handleClearSelection}

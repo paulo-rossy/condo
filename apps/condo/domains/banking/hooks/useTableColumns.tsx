@@ -1,8 +1,10 @@
+import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import { useRouter } from 'next/router'
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 
 import { useIntl } from '@open-condo/next/intl'
+import { Typography } from '@open-condo/ui'
 
 import {
     getTextRender,
@@ -17,8 +19,15 @@ import type { RenderReturnType } from '@condo/domains/common/components/Table/Re
 import type { FilterValue } from 'antd/lib/table/interface'
 
 const renderCategory = (search: FilterValue | string, nullReplace: string) => {
-    return function render (text: string): RenderReturnType {
-        return getTableCellRenderer(search)(isNull(text) ? nullReplace : text)
+    return function render (text: string, data): RenderReturnType {
+        const value = isNull(text) ? nullReplace : text
+        const costItemCategory = get(data, ['costItem', 'category', 'name'])
+
+        const postfix = isNull(text) ? null : (
+            <Typography.Text size='medium' type='secondary'>({costItemCategory})</Typography.Text>
+        )
+
+        return getTableCellRenderer(search, true, postfix, null)(value)
     }
 }
 
@@ -80,9 +89,9 @@ export function useTableColumns () {
             {
                 title: CategoryTitle,
                 key: 'category',
-                width: '12%',
+                width: '14%',
                 render: renderCategory(search, CategoryNotSetTitle),
-                dataIndex: ['costItem', 'category', 'name'],
+                dataIndex: ['costItem', 'name'],
             },
             {
                 title: SumTitle,
@@ -116,12 +125,12 @@ export function useTableColumns () {
             },
             {
                 title: CategoryTitle,
-                dataIndex: ['costItem', 'category', 'name'],
+                dataIndex: ['costItem', 'name'],
                 key: 'category',
                 width: '35%',
                 render: renderCategory(search, CategoryNotSetTitle),
             },
         ],
-    ], [search, ContractorTitle, TinTitle, BankAccountTitle, CategoryTitle, NumberTitle,
+    ], [search, ContractorTitle, TinTitle, BankAccountTitle, CategoryTitle, NumberTitle, CategoryNotSetTitle, intl,
         DateTitle, PaymentPurposeTitle, SumTitle, ReceiverTitle])
 }
