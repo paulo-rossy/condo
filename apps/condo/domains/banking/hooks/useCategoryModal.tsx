@@ -1,13 +1,11 @@
 import { Row, Col } from 'antd'
 import get from 'lodash/get'
-import groupBy from 'lodash/groupBy'
 import isNull from 'lodash/isNull'
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import { ChevronDown } from '@open-condo/icons'
 import { useIntl } from '@open-condo/next/intl'
 import { Modal, Typography, List, RadioGroup, Space, Button } from '@open-condo/ui'
-import type { RadioGroupProps } from '@open-condo/ui'
 
 import { useBankCostItemContext, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 
@@ -50,27 +48,10 @@ export const useCategoryModal: IUseCategoryModal = ({
     const SumTitle = intl.formatMessage({ id: 'global.sum' })
     const SaveTitle = intl.formatMessage({ id: 'Save' })
 
-    const { bankCostItems, loading } = useBankCostItemContext()
+    const { loading, bankCostItemGroups } = useBankCostItemContext()
 
     const [open, setOpen] = useState(false)
     const [selectedCostItem, setSelectedCostItem] = useState(null)
-    const groups = useRef<RadioGroupProps['groups']>([])
-
-    useEffect(() => {
-        // TODO: maybe move this calculations to the BankCostItemContext?
-        groups.current = []
-        const categoryObject = groupBy(bankCostItems, (costItem) => costItem.category.id)
-
-        Object.entries(categoryObject).forEach(([categoryId, costItems]) => {
-            groups.current.push({
-                name: get(costItems, ['0', 'category', 'name']),
-                options: costItems.map(costItem => ({
-                    label: costItem.name,
-                    value: costItem.id,
-                })),
-            })
-        })
-    }, [bankCostItems])
 
     const closeModal = useCallback(() => {
         setOpen(false)
@@ -173,16 +154,14 @@ export const useCategoryModal: IUseCategoryModal = ({
                             <RadioGroup
                                 onChange={onGroupChange}
                                 icon={<ChevronDown size='small' />}
-                                groups={groups.current}
+                                groups={bankCostItemGroups}
                             />
                         </Space>
                     </Col>
                 </Row>
             </Modal>
         )
-    }, [open, closeModal, ContractorTitle, PaymentPurposeTitle, BankAccountTitle, ChooseCategoryTitle, bankTransactions,
-        onGroupChange, handleSave, selectedCostItem, bankContractorAccounts, loading, SaveTitle, type, intl, SumTitle,
-        TransactionTitle, WithdrawalTitle, IncomeTitle, ContractorsSelectedTitle, TransactionsSelectedTitle])
+    }, [type, open, closeModal, selectedCostItem, loading, handleSave, SaveTitle, ChooseCategoryTitle, onGroupChange, bankCostItemGroups, intl, bankTransactions, TransactionTitle, PaymentPurposeTitle, SumTitle, IncomeTitle, WithdrawalTitle, TransactionsSelectedTitle, bankContractorAccounts, ContractorTitle, BankAccountTitle, ContractorsSelectedTitle])
 
     return { categoryModal, setOpen }
 }
