@@ -78,8 +78,8 @@ export const useCategoryModal: IUseCategoryModal = ({
     const onGroupChange = useCallback((event) => {
         setSelectedCostItem(event.target.value)
     }, [])
+
     const handleSave = useCallback(async () => {
-        // TODO: add save method based on received entity (bankTransactions or bankContractorAccounts)
         if (type === 'contractor') {
             await updateSelected({
                 variables: {
