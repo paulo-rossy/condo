@@ -38,7 +38,7 @@ const CategoryProgress: ICategoryProgress = ({ data, entity }) => {
 
     const percent = Math.round(data.filter(e => e.costItem !== null).length / data.length * 100)
 
-    if (percent === 100) {
+    if (isNaN(percent) || percent === 100) {
         return null
     }
 
