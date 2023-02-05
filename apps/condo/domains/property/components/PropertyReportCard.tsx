@@ -1,5 +1,5 @@
 /** @jsx jsx */
-import { jsx } from '@emotion/react'
+import { jsx, css } from '@emotion/react'
 import styled from '@emotion/styled'
 import { Image, notification, Space } from 'antd'
 import cookie from 'js-cookie'
@@ -15,10 +15,10 @@ import { Button, Card, Typography, Modal } from '@open-condo/ui'
 
 import { CREATE_BANK_ACCOUNT_REQUEST_MUTATION } from '@condo/domains/banking/gql'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
+import { Loader } from '@condo/domains/common/components/Loader'
 import { PROPERTY_BANK_ACCOUNT } from '@condo/domains/common/constants/featureflags'
 import { useContainerSize } from '@condo/domains/common/hooks/useContainerSize'
 
-import { Loader } from '../../common/components/Loader'
 
 import type { Property, BankAccount as BankAccountType } from '@app/condo/schema'
 
@@ -74,15 +74,17 @@ const PropertyBalanceContentWrapper = styled.div`
   height: 100%;
 `
 
-interface IPropertyReportCard {
-    ({ organizationId, property, role }: { organizationId: string, property: Property, role: unknown }): React.ReactElement
-}
+const PropertyCardCss = css`
+  &, & .condo-card-body {
+    height: 100%;
+  }
+`
 
-interface IPropertyBalanceContent {
+interface IPropertyCardBalanceContent {
     ({ bankAccount, clickCallback }: { bankAccount: BankAccountType, clickCallback: () => void }): React.ReactElement
 }
 
-const PropertyBalanceContent: IPropertyBalanceContent = ({ bankAccount, clickCallback }) => {
+const PropertyCardBalanceContent: IPropertyCardBalanceContent = ({ bankAccount, clickCallback }) => {
     const intl = useIntl()
     const BalanceTitle = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportBalance.title' })
     const BalanceDescription = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportBalance.description' }, {
@@ -110,7 +112,17 @@ const PropertyBalanceContent: IPropertyBalanceContent = ({ bankAccount, clickCal
     )
 }
 
-const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, role }) => {
+interface IPropertyCardInfoContent {
+    ({ hasAccess, featureEnabled, setupButtonClick, organizationId, propertyId }: {
+        hasAccess: boolean,
+        featureEnabled: boolean,
+        setupButtonClick: () => void,
+        organizationId: string
+        propertyId: string
+    }): React.ReactElement
+}
+
+const PropertyCardInfoContent: IPropertyCardInfoContent = (props) => {
     const intl = useIntl()
     const PropertyReportTitle = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportTitle' })
     const PropertyReportDescription = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportDescription' })
@@ -124,26 +136,15 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
     const AlreadySentTitle = intl.formatMessage({ id: 'pages.condo.property.id.AlreadySentTitle' })
     const LoadingError = intl.formatMessage({ id: 'errors.LoadingError' })
 
-    const { asPath, push } = useRouter()
-    const { useFlag } = useFeatureFlags()
+    const { featureEnabled, setupButtonClick, organizationId, propertyId, hasAccess } = props
+
     const [{ width }, setRef] = useContainerSize<HTMLDivElement>()
-
-    const { obj: bankAccount, loading } = BankAccount.useObject({
-        where: {
-            organization: { id: organizationId },
-            property: { id: property.id },
-        },
-    })
-
     const [createBankAccountRequest, { loading: createBankAccountRequestLoading }] = useMutation(CREATE_BANK_ACCOUNT_REQUEST_MUTATION)
 
     const [bankAccountModalVisible, setBankAccountModalVisible] = useState(false)
 
-    const setupReportClick = useCallback(async () => {
-        await push(asPath + '/report')
-    }, [asPath, push])
     const createBankAccountRequestCallback = useCallback(async () => {
-        const alreadySent = cookie.get(`createBankAccountRequestSent-${property.id}`)
+        const alreadySent = cookie.get(`createBankAccountRequestSent-${propertyId}`)
         if (alreadySent) {
             notification.error({ message: AlreadySentTitle })
         } else {
@@ -153,7 +154,7 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
                         dv: 1,
                         sender: getClientSideSenderInfo(),
                         organizationId,
-                        propertyId: property.id,
+                        propertyId: propertyId,
                     },
                 },
             })
@@ -163,71 +164,54 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
                     message: LoadingError,
                 })
             } else {
-                cookie.set(`createBankAccountRequestSent-${property.id}`, true, { expires: 1 })
+                cookie.set(`createBankAccountRequestSent-${propertyId}`, true, { expires: 1 })
                 setBankAccountModalVisible(true)
             }
         }
-    }, [AlreadySentTitle, LoadingError, organizationId, property, createBankAccountRequest])
+    }, [AlreadySentTitle, LoadingError, organizationId, propertyId, createBankAccountRequest])
     const closeBankAccountModal = () => setBankAccountModalVisible(false)
 
-    const bankAccountCardEnabled = useFlag(PROPERTY_BANK_ACCOUNT)
+    const isButtonsHidden = !hasAccess || !featureEnabled
     const isSmall = width >= PROPERTY_CARD_WIDTH_THRESHOLD
-    const canManageBankAccount = get(role, 'canManageBankAccounts', false)
-    const isButtonsHidden = !canManageBankAccount || !bankAccountCardEnabled
-
-    if (loading) {
-        return <Loader />
-    }
 
     return (
         <>
-            <Card>
-                <PropertyCardContent>
-                    {bankAccountCardEnabled && bankAccount && canManageBankAccount
-                        ? <PropertyBalanceContent bankAccount={bankAccount} clickCallback={setupReportClick} />
-                        : (
-                            <>
-                                <Space direction='vertical' size={12}>
-                                    <Typography.Title level={3}>
-                                        {bankAccountCardEnabled ? PropertyReportTitle : PropertyReportComingSoonTitle}
-                                    </Typography.Title>
-                                    <>
-                                        <Typography.Paragraph>{PropertyReportDescription}</Typography.Paragraph>
-                                        {bankAccountCardEnabled
-                                            ? canManageBankAccount ? null : (
-                                                <Typography.Paragraph>{PropertyReportAccessDeniedTitle}</Typography.Paragraph>
-                                            )
-                                            : (
-                                                <Typography.Paragraph>{PropertyReportComingSoonSubTitle}</Typography.Paragraph>
-                                            )}
-                                    </>
-                                </Space>
-                                <PropertyReportCardBottomWrapper
-                                    ref={setRef}
-                                    isSmall={isSmall}
-                                    isButtonsHidden={isButtonsHidden}
-                                >
-                                    <Space direction='vertical' size={12} hidden={isButtonsHidden}>
-                                        <Button type='primary' onClick={setupReportClick}>
-                                            {SetupReportTitle}
-                                        </Button>
-                                        <Button
-                                            type='secondary'
-                                            onClick={createBankAccountRequestCallback}
-                                            loading={createBankAccountRequestLoading}
-                                        >
-                                            {BecomeSberClientTitle}
-                                        </Button>
-                                    </Space>
-                                    <ImageWrapper>
-                                        <Image src='/property-empty-report.png' preview={false} />
-                                    </ImageWrapper>
-                                </PropertyReportCardBottomWrapper>
-                            </>
+            <Space direction='vertical' size={12}>
+                <Typography.Title level={3}>
+                    {featureEnabled ? PropertyReportTitle : PropertyReportComingSoonTitle}
+                </Typography.Title>
+                <>
+                    <Typography.Paragraph>{PropertyReportDescription}</Typography.Paragraph>
+                    {featureEnabled
+                        ? hasAccess ? null : (
+                            <Typography.Paragraph>{PropertyReportAccessDeniedTitle}</Typography.Paragraph>
                         )
-                    }
-                </PropertyCardContent>
-            </Card>
+                        : (
+                            <Typography.Paragraph>{PropertyReportComingSoonSubTitle}</Typography.Paragraph>
+                        )}
+                </>
+            </Space>
+            <PropertyReportCardBottomWrapper
+                ref={setRef}
+                isSmall={isSmall}
+                isButtonsHidden={isButtonsHidden}
+            >
+                <Space direction='vertical' size={12} hidden={isButtonsHidden}>
+                    <Button type='primary' onClick={setupButtonClick}>
+                        {SetupReportTitle}
+                    </Button>
+                    <Button
+                        type='secondary'
+                        onClick={createBankAccountRequestCallback}
+                        loading={createBankAccountRequestLoading}
+                    >
+                        {BecomeSberClientTitle}
+                    </Button>
+                </Space>
+                <ImageWrapper>
+                    <Image src='/property-empty-report.png' preview={false} />
+                </ImageWrapper>
+            </PropertyReportCardBottomWrapper>
             <Modal
                 title={ModalTitle}
                 open={bankAccountModalVisible}
@@ -237,6 +221,50 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
                     {ModalDescription}
                 </Typography.Paragraph>
             </Modal>
+        </>
+    )
+}
+
+interface IPropertyReportCard {
+    ({ organizationId, property, role }: { organizationId: string, property: Property, role: unknown }): React.ReactElement
+}
+
+const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, role }) => {
+    const { asPath, push } = useRouter()
+    const { useFlag } = useFeatureFlags()
+
+    const { obj: bankAccount, loading } = BankAccount.useObject({
+        where: {
+            organization: { id: organizationId },
+            property: { id: property.id },
+        },
+    })
+
+    const setupReportClick = useCallback(async () => {
+        await push(asPath + '/report')
+    }, [asPath, push])
+
+    const bankAccountCardEnabled = useFlag(PROPERTY_BANK_ACCOUNT)
+    const canManageBankAccount = get(role, 'canManageBankAccounts', false)
+
+    return (
+        <>
+            <Card css={PropertyCardCss}>
+                {loading ? <Loader fill size='large' /> : (
+                    <PropertyCardContent>
+                        {bankAccountCardEnabled && bankAccount && canManageBankAccount
+                            ? <PropertyCardBalanceContent bankAccount={bankAccount} clickCallback={setupReportClick} />
+                            : <PropertyCardInfoContent
+                                hasAccess={canManageBankAccount}
+                                featureEnabled={bankAccountCardEnabled}
+                                setupButtonClick={setupReportClick}
+                                organizationId={organizationId}
+                                propertyId={property.id}
+                            />
+                        }
+                    </PropertyCardContent>
+                )}
+            </Card>
         </>
     )
 }
