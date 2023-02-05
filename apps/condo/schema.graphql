@@ -13287,6 +13287,7 @@ type BankAccountHistoryRecord {
   territoryCode: String
   bankName: String
   meta: JSON
+  propertyBalance: JSON
   id: ID!
   v: Int
   createdAt: String
@@ -13485,6 +13486,10 @@ input BankAccountHistoryRecordWhereInput {
   meta_not: JSON
   meta_in: [JSON]
   meta_not_in: [JSON]
+  propertyBalance: JSON
+  propertyBalance_not: JSON
+  propertyBalance_in: [JSON]
+  propertyBalance_not_in: [JSON]
   id: ID
   id_not: ID
   id_in: [ID]
@@ -13621,6 +13626,7 @@ input BankAccountHistoryRecordUpdateInput {
   territoryCode: String
   bankName: String
   meta: JSON
+  propertyBalance: JSON
   v: Int
   createdAt: String
   updatedAt: String
@@ -13657,6 +13663,7 @@ input BankAccountHistoryRecordCreateInput {
   territoryCode: String
   bankName: String
   meta: JSON
+  propertyBalance: JSON
   v: Int
   createdAt: String
   updatedAt: String
@@ -13757,6 +13764,10 @@ type BankAccount {
   """ Structured non-typed metadata, can be used by mini-apps or external services to store information 
   """
   meta: JSON
+
+  """ Total balance based on current account transactions for the previous period 
+  """
+  propertyBalance: String
   id: ID!
   v: Int
   createdAt: String

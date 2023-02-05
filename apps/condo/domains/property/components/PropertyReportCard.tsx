@@ -1,7 +1,7 @@
 /** @jsx jsx */
 import { jsx } from '@emotion/react'
 import styled from '@emotion/styled'
-import { Space, Image, notification } from 'antd'
+import { Image, notification, Space } from 'antd'
 import cookie from 'js-cookie'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
@@ -14,12 +14,22 @@ import { useIntl } from '@open-condo/next/intl'
 import { Button, Card, Typography, Modal } from '@open-condo/ui'
 
 import { CREATE_BANK_ACCOUNT_REQUEST_MUTATION } from '@condo/domains/banking/gql'
+import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import { PROPERTY_BANK_ACCOUNT } from '@condo/domains/common/constants/featureflags'
 import { useContainerSize } from '@condo/domains/common/hooks/useContainerSize'
 
-import type { Property } from '@app/condo/schema'
+import { Loader } from '../../common/components/Loader'
+
+import type { Property, BankAccount as BankAccountType } from '@app/condo/schema'
 
 const PROPERTY_CARD_WIDTH_THRESHOLD = 400
+const INTL_DATE_FORMAT = {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+}
 
 const PropertyReportCardBottomWrapper = styled.div<{ isSmall: boolean, isButtonsHidden: boolean }>`
   display: flex;
@@ -55,8 +65,49 @@ const ImageWrapper = styled.div`
   align-content: center;
 `
 
+const PropertyBalanceContentWrapper = styled.div`
+  padding: 90px 0;
+  display: flex;
+  text-align: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+`
+
 interface IPropertyReportCard {
     ({ organizationId, property, role }: { organizationId: string, property: Property, role: unknown }): React.ReactElement
+}
+
+interface IPropertyBalanceContent {
+    ({ bankAccount, clickCallback }: { bankAccount: BankAccountType, clickCallback: () => void }): React.ReactElement
+}
+
+const PropertyBalanceContent: IPropertyBalanceContent = ({ bankAccount, clickCallback }) => {
+    const intl = useIntl()
+    const BalanceTitle = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportBalance.title' })
+    const BalanceDescription = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportBalance.description' }, {
+        dateUpdated: intl.formatDate(bankAccount.updatedAt, INTL_DATE_FORMAT),
+    })
+    const BalanceValue = intl.formatNumber(bankAccount.propertyBalance, {
+        style: 'currency',
+        currency: bankAccount.currencyCode,
+    })
+    const ButtonTitle = intl.formatMessage({ id: 'pages.condo.property.id.propertyReportBalance.buttonTitle' })
+
+    return (
+        <>
+            <Typography.Title level={3}>{BalanceTitle}</Typography.Title>
+            <PropertyBalanceContentWrapper>
+                <Space direction='vertical' size={20}>
+                    <Space direction='vertical' size={12}>
+                        <Typography.Title level={1}>{BalanceValue}</Typography.Title>
+                        <Typography.Text size='small' type='secondary'>{BalanceDescription}</Typography.Text>
+                    </Space>
+                    <Button type='secondary' onClick={clickCallback}>{ButtonTitle}</Button>
+                </Space>
+            </PropertyBalanceContentWrapper>
+        </>
+    )
 }
 
 const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, role }) => {
@@ -76,6 +127,13 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
     const { asPath, push } = useRouter()
     const { useFlag } = useFeatureFlags()
     const [{ width }, setRef] = useContainerSize<HTMLDivElement>()
+
+    const { obj: bankAccount, loading } = BankAccount.useObject({
+        where: {
+            organization: { id: organizationId },
+            property: { id: property.id },
+        },
+    })
 
     const [createBankAccountRequest, { loading: createBankAccountRequestLoading }] = useMutation(CREATE_BANK_ACCOUNT_REQUEST_MUTATION)
 
@@ -112,52 +170,62 @@ const PropertyReportCard: IPropertyReportCard = ({ organizationId, property, rol
     }, [AlreadySentTitle, LoadingError, organizationId, property, createBankAccountRequest])
     const closeBankAccountModal = () => setBankAccountModalVisible(false)
 
-
     const bankAccountCardEnabled = useFlag(PROPERTY_BANK_ACCOUNT)
     const isSmall = width >= PROPERTY_CARD_WIDTH_THRESHOLD
     const canManageBankAccount = get(role, 'canManageBankAccounts', false)
     const isButtonsHidden = !canManageBankAccount || !bankAccountCardEnabled
 
+    if (loading) {
+        return <Loader />
+    }
+
     return (
         <>
             <Card>
                 <PropertyCardContent>
-                    <Space direction='vertical' size={12}>
-                        <Typography.Title level={3}>
-                            {bankAccountCardEnabled ? PropertyReportTitle : PropertyReportComingSoonTitle}
-                        </Typography.Title>
-                        <>
-                            <Typography.Paragraph>{PropertyReportDescription}</Typography.Paragraph>
-                            {bankAccountCardEnabled
-                                ? canManageBankAccount ? null : (
-                                    <Typography.Paragraph>{PropertyReportAccessDeniedTitle}</Typography.Paragraph>
-                                )
-                                : (
-                                    <Typography.Paragraph>{PropertyReportComingSoonSubTitle}</Typography.Paragraph>
-                                )}
-                        </>
-                    </Space>
-                    <PropertyReportCardBottomWrapper
-                        ref={setRef}
-                        isSmall={isSmall}
-                        isButtonsHidden={isButtonsHidden}
-                    >
-                        <Space direction='vertical' size={12} hidden={isButtonsHidden}>
-                            <Button type='primary' onClick={setupReportClick}>
-                                {SetupReportTitle}
-                            </Button>
-                            <Button
-                                type='secondary'
-                                onClick={createBankAccountRequestCallback}
-                                loading={createBankAccountRequestLoading}
-                            >
-                                {BecomeSberClientTitle}
-                            </Button>
-                        </Space>
-                        <ImageWrapper>
-                            <Image src='/property-empty-report.png' preview={false} />
-                        </ImageWrapper>
-                    </PropertyReportCardBottomWrapper>
+                    {bankAccountCardEnabled && bankAccount && canManageBankAccount
+                        ? <PropertyBalanceContent bankAccount={bankAccount} clickCallback={setupReportClick} />
+                        : (
+                            <>
+                                <Space direction='vertical' size={12}>
+                                    <Typography.Title level={3}>
+                                        {bankAccountCardEnabled ? PropertyReportTitle : PropertyReportComingSoonTitle}
+                                    </Typography.Title>
+                                    <>
+                                        <Typography.Paragraph>{PropertyReportDescription}</Typography.Paragraph>
+                                        {bankAccountCardEnabled
+                                            ? canManageBankAccount ? null : (
+                                                <Typography.Paragraph>{PropertyReportAccessDeniedTitle}</Typography.Paragraph>
+                                            )
+                                            : (
+                                                <Typography.Paragraph>{PropertyReportComingSoonSubTitle}</Typography.Paragraph>
+                                            )}
+                                    </>
+                                </Space>
+                                <PropertyReportCardBottomWrapper
+                                    ref={setRef}
+                                    isSmall={isSmall}
+                                    isButtonsHidden={isButtonsHidden}
+                                >
+                                    <Space direction='vertical' size={12} hidden={isButtonsHidden}>
+                                        <Button type='primary' onClick={setupReportClick}>
+                                            {SetupReportTitle}
+                                        </Button>
+                                        <Button
+                                            type='secondary'
+                                            onClick={createBankAccountRequestCallback}
+                                            loading={createBankAccountRequestLoading}
+                                        >
+                                            {BecomeSberClientTitle}
+                                        </Button>
+                                    </Space>
+                                    <ImageWrapper>
+                                        <Image src='/property-empty-report.png' preview={false} />
+                                    </ImageWrapper>
+                                </PropertyReportCardBottomWrapper>
+                            </>
+                        )
+                    }
                 </PropertyCardContent>
             </Card>
             <Modal

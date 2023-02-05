@@ -5795,6 +5795,8 @@ export type BankAccount = {
   bankName?: Maybe<Scalars['String']>;
   /**  Structured non-typed metadata, can be used by mini-apps or external services to store information  */
   meta?: Maybe<Scalars['JSON']>;
+  /**  Total balance based on current account transactions for the previous period  */
+  propertyBalance?: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
@@ -5871,6 +5873,7 @@ export type BankAccountHistoryRecord = {
   territoryCode?: Maybe<Scalars['String']>;
   bankName?: Maybe<Scalars['String']>;
   meta?: Maybe<Scalars['JSON']>;
+  propertyBalance?: Maybe<Scalars['JSON']>;
   id: Scalars['ID'];
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
@@ -5903,6 +5906,7 @@ export type BankAccountHistoryRecordCreateInput = {
   territoryCode?: Maybe<Scalars['String']>;
   bankName?: Maybe<Scalars['String']>;
   meta?: Maybe<Scalars['JSON']>;
+  propertyBalance?: Maybe<Scalars['JSON']>;
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
   updatedAt?: Maybe<Scalars['String']>;
@@ -5940,6 +5944,7 @@ export type BankAccountHistoryRecordUpdateInput = {
   territoryCode?: Maybe<Scalars['String']>;
   bankName?: Maybe<Scalars['String']>;
   meta?: Maybe<Scalars['JSON']>;
+  propertyBalance?: Maybe<Scalars['JSON']>;
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
   updatedAt?: Maybe<Scalars['String']>;
@@ -6137,6 +6142,10 @@ export type BankAccountHistoryRecordWhereInput = {
   meta_not?: Maybe<Scalars['JSON']>;
   meta_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
   meta_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  propertyBalance?: Maybe<Scalars['JSON']>;
+  propertyBalance_not?: Maybe<Scalars['JSON']>;
+  propertyBalance_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  propertyBalance_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
   id?: Maybe<Scalars['ID']>;
   id_not?: Maybe<Scalars['ID']>;
   id_in?: Maybe<Array<Maybe<Scalars['ID']>>>;
