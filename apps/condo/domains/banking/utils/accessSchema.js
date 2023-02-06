@@ -1,16 +1,11 @@
-const { get, uniq } = require('lodash')
+const { get, uniq, isArray } = require('lodash')
 
-const { throwAuthenticationError } = require('@open-condo/keystone/apolloErrorFormatter')
 const { find, getById } = require('@open-condo/keystone/schema')
 
 const { checkPermissionsInUserOrganizationsOrRelatedOrganizations } = require('@condo/domains/organization/utils/accessSchema')
 
 async function canManageBankEntityWithOrganization ({ authentication: { item: user }, originalInput, operation, itemId, itemIds, listKey }, permission) {
-    if (!user) return throwAuthenticationError()
-    if (user.deletedAt) return false
-    if (user.isAdmin) return true
-
-    const isBulkRequest = Array.isArray(originalInput)
+    const isBulkRequest = isArray(originalInput)
 
     let organizationIds
 
@@ -26,7 +21,7 @@ async function canManageBankEntityWithOrganization ({ authentication: { item: us
         }
     } else if (operation === 'update') {
         if (isBulkRequest) {
-            if (!itemIds || !Array.isArray(itemIds)) return false
+            if (!itemIds || !isArray(itemIds)) return false
             if (itemIds.length !== uniq(itemIds).length) return false
 
             const items = await find(listKey, {
