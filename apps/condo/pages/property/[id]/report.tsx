@@ -4,6 +4,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { useFeatureFlags } from '@open-condo/featureflags/FeatureFlagsContext'
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
@@ -25,6 +26,7 @@ import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/Sbe
 import { Loader } from '@condo/domains/common/components/Loader'
 import DateRangePicker from '@condo/domains/common/components/Pickers/DateRangePicker'
 import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
+import { PROPERTY_REPORT_DELETE_ENTITIES } from '@condo/domains/common/constants/featureflags'
 import { useDateRangeSearch } from '@condo/domains/common/hooks/useDateRangeSearch'
 import { useSearch } from '@condo/domains/common/hooks/useSearch'
 import { OrganizationRequired } from '@condo/domains/organization/components/OrganizationRequired'
@@ -55,11 +57,6 @@ interface IPropertyImportBankTransactions {
 }
 interface IPropertyReport {
     ({ bankAccount, organizationId }: { bankAccount: BankAccountType, organizationId: string }): React.ReactElement
-}
-
-enum ReportVisibility {
-    'hidden',
-    'visible',
 }
 
 const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
@@ -127,6 +124,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         type: tab,
         updateSelected: tab === 'contractor' ? updateBankContractors : updateBankTransactions,
     })
+    const { useFlag } = useFeatureFlags()
 
     // Handlers
     const handleSearchChange = useCallback((e) => {
@@ -197,6 +195,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const deleteModalDescription = selectedBankTransactions.length
         ? intl.formatMessage({ id: 'pages.banking.removeModal.transaction.description' }, { count: selectedBankTransactions.length })
         : intl.formatMessage({ id: 'pages.banking.removeModal.contractor.description' }, { count: selectedContractorAccounts.length })
+    const reportDeleteEntities = useFlag(PROPERTY_REPORT_DELETE_ENTITIES)
 
     return (
         <>
@@ -253,14 +252,16 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                                     >
                                         {EditTitle}
                                     </Button>
-                                    <DeleteButtonWithConfirmModal
-                                        title={deleteModalTitle}
-                                        message={deleteModalDescription}
-                                        okButtonLabel={DeleteTitle}
-                                        buttonContent={DeleteTitle}
-                                        action={handleDeleteSelected}
-                                        showCancelButton
-                                    />
+                                    {reportDeleteEntities && (
+                                        <DeleteButtonWithConfirmModal
+                                            title={deleteModalTitle}
+                                            message={deleteModalDescription}
+                                            okButtonLabel={DeleteTitle}
+                                            buttonContent={DeleteTitle}
+                                            action={handleDeleteSelected}
+                                            showCancelButton
+                                        />
+                                    )}
                                     <Button
                                         type='secondary'
                                         onClick={handleClearSelection}
