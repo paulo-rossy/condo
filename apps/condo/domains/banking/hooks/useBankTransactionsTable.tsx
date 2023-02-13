@@ -17,7 +17,6 @@ import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/
 
 import type {
     BankAccount,
-    BankTransactionWhereInput,
     BankTransaction as BankTransactionType,
     MutationUpdateBankTransactionsArgs,
 } from '@app/condo/schema'
@@ -55,17 +54,14 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
 
     const { bankAccount, type, categoryNotSet } = props
 
-    const whereQuery: BankTransactionWhereInput = type === 'withdrawal'
-        ? { dateReceived: null }
-        : { dateWithdrawed: null }
     const nullCategoryFilter = categoryNotSet ? { costItem_is_null: true } : {}
     const pageIndex = getPageIndexFromOffset(offset, DEFAULT_PAGE_SIZE)
 
     const { objs: bankTransactions, loading, refetch } = BankTransaction.useObjects({
         where: {
             account: { id: bankAccount.id },
+            isOutcome: type === 'withdrawal',
             ...nullCategoryFilter,
-            ...whereQuery,
             ...filtersToWhere(filters),
         },
         first: DEFAULT_PAGE_SIZE,

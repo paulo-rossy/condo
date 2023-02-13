@@ -70,7 +70,7 @@ describe('BankAccount', () => {
 
             test('user can\'t', async () => {
                 const user = await makeClientWithNewRegisteredAndLoggedInUser()
-                
+
                 const [organization] = await createTestOrganization(adminClient)
 
                 await expectToThrowAccessDeniedErrorToObj(async () => {
@@ -352,28 +352,25 @@ describe('BankAccount', () => {
         describe('propertyBalance', () => {
             test('propertyBalance should be zero if no transactions found for account', async () => {
                 const [organization] = await createTestOrganization(adminClient)
-                const [property] = await createTestProperty(adminClient, organization)
-                const [bankAccount] = await createTestBankAccount(adminClient, organization, property)
+                const [bankAccount] = await createTestBankAccount(adminClient, organization)
 
                 expect(bankAccount).toHaveProperty('propertyBalance', '0')
             })
 
             test('should contain previous and current period of account transactions', async () => {
                 const [organization] = await createTestOrganization(adminClient)
-                const [property] = await createTestProperty(adminClient, organization)
-                const [bankAccount] = await createTestBankAccount(adminClient, organization, property)
+                const [bankAccount] = await createTestBankAccount(adminClient, organization)
                 const [contractorAccount] = await createTestBankContractorAccount(adminClient, organization)
                 const [bankIntegrationContext] = await createTestBankIntegrationContext(adminClient, bankIntegration, organization)
 
 
                 const [incomeTransaction] = await createTestBankTransaction(adminClient, bankAccount, contractorAccount, bankIntegrationContext, organization, {
-                    dateReceived: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
-                    dateWithdrawed: null,
                     date: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
+                    isOutcome: false,
                 })
                 const [withdrawTransaction] = await createTestBankTransaction(adminClient, bankAccount, contractorAccount, bankIntegrationContext, organization, {
-                    dateWithdrawed: dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
                     date: dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
+                    isOutcome: true,
                 })
 
                 const propertyBalance = String(parseFloat(incomeTransaction.amount) - parseFloat(withdrawTransaction.amount))

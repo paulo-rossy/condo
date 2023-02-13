@@ -194,22 +194,26 @@ const BankAccount = new GQLListSchema('BankAccount', {
 
                 const incomePreviousPeriod = await BankTransaction.getAll(context, {
                     ...accountFilter,
-                    dateReceived_gte: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
-                    dateReceived_lte: dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
+                    date_gte: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
+                    date_lte: dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
+                    isOutcome: false,
                 })
                 const incomeCurrentPeriod = await BankTransaction.getAll(context, {
                     ...accountFilter,
-                    dateReceived_gte: dayjs().startOf('month').format('YYYY-MM-DD'),
+                    date_gte: dayjs().startOf('month').format('YYYY-MM-DD'),
+                    isOutcome: false,
                 })
 
                 const withdrawPreviousPeriod = await BankTransaction.getAll(context, {
                     ...accountFilter,
-                    dateWithdrawed_gte: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
-                    dateWithdrawed_lte: dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
+                    date_gte: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
+                    date_lte: dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
+                    isOutcome: true,
                 })
                 const withdrawCurrentPeriod = await BankTransaction.getAll(context, {
                     ...accountFilter,
-                    dateWithdrawed_gte: dayjs().startOf('month').format('YYYY-MM-DD'),
+                    date_gte: dayjs().startOf('month').format('YYYY-MM-DD'),
+                    isOutcome: true,
                 })
 
                 return (getTotalAmount(incomeCurrentPeriod) - getTotalAmount(withdrawCurrentPeriod)) + (getTotalAmount(incomePreviousPeriod) - getTotalAmount(withdrawPreviousPeriod))
