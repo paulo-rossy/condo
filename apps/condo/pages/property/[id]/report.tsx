@@ -8,6 +8,7 @@ import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
 
+import { BankAccountVisibilitySelect } from '@condo/domains/banking/components/BankAccountVisibilitySelect'
 import { BankCostItemProvider, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
@@ -54,6 +55,11 @@ interface IPropertyImportBankTransactions {
 }
 interface IPropertyReport {
     ({ bankAccount, organizationId }: { bankAccount: BankAccountType, organizationId: string }): React.ReactElement
+}
+
+enum ReportVisibility {
+    'hidden',
+    'visible',
 }
 
 const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
@@ -305,28 +311,35 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
 
                     </Col>
                     <Col span={24}>
-                        <Typography.Text>
-                            {property.address}
-                        </Typography.Text>
-                        {hasBankAccount ? (
-                            <>
-                                &nbsp;
-                                <Typography.Text type='secondary'>
-                                    {intl.formatMessage(
-                                        { id: 'pages.condo.property.report.pageReportDescription' },
-                                        { bankAccountNumber: bankAccount.number }
-                                    )}
+                        <Row justify='space-between' gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
+                            <Col>
+                                <Typography.Text>
+                                    {property.address}
                                 </Typography.Text>
-                                <Typography.Paragraph type='warning'>
-                                    {
-                                        intl.formatMessage(
-                                            { id: 'pages.condo.property.report.dataUpdatedTitle' },
-                                            { updatedAt: intl.formatDate(bankAccount.updatedAt, DATE_DISPLAY_FORMAT) }
-                                        )
-                                    }
-                                </Typography.Paragraph>
-                            </>
-                        ) : null}
+                                {hasBankAccount ? (
+                                    <>
+                                &nbsp;
+                                        <Typography.Text type='secondary'>
+                                            {intl.formatMessage(
+                                                { id: 'pages.condo.property.report.pageReportDescription' },
+                                                { bankAccountNumber: bankAccount.number }
+                                            )}
+                                        </Typography.Text>
+                                        <Typography.Paragraph type='warning'>
+                                            {
+                                                intl.formatMessage(
+                                                    { id: 'pages.condo.property.report.dataUpdatedTitle' },
+                                                    { updatedAt: intl.formatDate(bankAccount.updatedAt, DATE_DISPLAY_FORMAT) }
+                                                )
+                                            }
+                                        </Typography.Paragraph>
+                                    </>
+                                ) : null}
+                            </Col>
+                            <Col>
+                                <BankAccountVisibilitySelect bankAccount={bankAccount} />
+                            </Col>
+                        </Row>
                     </Col>
                 </Row>
             </Col>

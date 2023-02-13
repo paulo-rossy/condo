@@ -101,7 +101,7 @@ export const useCategoryModal: IUseCategoryModal = ({
         if (type === 'income' || type === 'withdrawal') {
             const totalAmount = intl.formatNumber(
                 bankTransactions.reduce((prev, current) =>  prev + parseFloat(current.amount), 0),
-                { style: 'currency', currency: get(bankTransactions, '0.currencyCode') }
+                { style: 'currency', currency: get(bankTransactions, '0.currencyCode', 'RUB') }
             )
 
             if (bankTransactions.length === 1) {
