@@ -3,6 +3,7 @@ import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import React, { useState, useCallback, useMemo } from 'react'
 
+import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { ChevronDown } from '@open-condo/icons'
 import { useIntl } from '@open-condo/next/intl'
 import { Modal, Typography, List, RadioGroup, Space, Button } from '@open-condo/ui'
@@ -61,6 +62,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     }, [])
 
     const handleSave = useCallback(async () => {
+        const sender = getClientSideSenderInfo()
         if (type === 'contractor') {
             await updateSelected({
                 variables: {
@@ -68,6 +70,8 @@ export const useCategoryModal: IUseCategoryModal = ({
                         return {
                             id: contractor.id,
                             data: {
+                                dv: 1,
+                                sender,
                                 costItem: { connect: { id: selectedCostItem } },
                             },
                         }
@@ -81,6 +85,8 @@ export const useCategoryModal: IUseCategoryModal = ({
                         return {
                             id: transaction.id,
                             data: {
+                                dv: 1,
+                                sender,
                                 costItem: { connect: { id: selectedCostItem } },
                             },
                         }

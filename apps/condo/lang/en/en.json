@@ -915,6 +915,7 @@
   "pages.banking.categoryProgress.tooltip.transaction": "Transactions without category will display in «Other» category",
   "pages.banking.categoryModal.contractorsSelected": "Contractors selected",
   "pages.banking.categoryModal.transactionsSelected": "Transactions selected",
+  "pages.banking.report.itemsSelected": "Items selected: {count}",
   "EmployeeRoles": "Employee roles",
   "EmployeeRoles.availableTickets": "Which tickets the employee sees",
   "EmployeeRoles.availableTickets.allTickets": "all tickets",

@@ -4,6 +4,7 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { useFeatureFlags } from '@open-condo/featureflags/FeatureFlagsContext'
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
@@ -157,6 +158,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         setOpen(true)
     }, [setOpen])
     const handleDeleteSelected = useCallback(async () => {
+        const sender = getClientSideSenderInfo()
         if (tab !== 'contractor' && selectedBankTransactions.length) {
             await updateBankTransactions({
                 variables: {
@@ -164,6 +166,8 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                         return {
                             id: transaction.id,
                             data: {
+                                dv: 1,
+                                sender,
                                 deletedAt: new Date().toDateString(),
                             },
                         }
@@ -177,6 +181,8 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                         return {
                             id: contractor.id,
                             data: {
+                                dv: 1,
+                                sender,
                                 deletedAt: new Date().toDateString(),
                             },
                         }
@@ -197,12 +203,14 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         }
     }, [tab, bankContractorAccountTable, bankTransactionsTable])
 
+    const totalSelectedItems = selectedBankTransactions.length || selectedContractorAccounts.length
     const deleteModalTitle = selectedBankTransactions.length
         ? intl.formatMessage({ id: 'pages.banking.removeModal.transaction.title' }, { count: selectedBankTransactions.length })
         : intl.formatMessage({ id: 'pages.banking.removeModal.contractor.title' }, { count: selectedContractorAccounts.length })
     const deleteModalDescription = selectedBankTransactions.length
         ? intl.formatMessage({ id: 'pages.banking.removeModal.transaction.description' }, { count: selectedBankTransactions.length })
         : intl.formatMessage({ id: 'pages.banking.removeModal.contractor.description' }, { count: selectedContractorAccounts.length })
+    const itemsSelectedTitle = intl.formatMessage({ id: 'pages.banking.report.itemsSelected' }, { count: totalSelectedItems })
     const reportDeleteEntities = useFlag(PROPERTY_REPORT_DELETE_ENTITIES)
 
     return (
@@ -251,9 +259,10 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
             <ActionBar>
                 <Space size={12}>
                     {
-                        selectedBankTransactions.length || selectedContractorAccounts.length
+                        totalSelectedItems
                             ? (
                                 <>
+                                    <Typography.Title level={5}>{itemsSelectedTitle}</Typography.Title>
                                     <Button
                                         type='primary'
                                         onClick={handleEditSelectedRows}

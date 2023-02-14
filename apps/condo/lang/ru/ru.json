@@ -915,6 +915,7 @@
   "pages.banking.categoryProgress.tooltip.transaction": "Транзакции без указания категории отображаются в категории «Прочие»",
   "pages.banking.categoryModal.contractorsSelected": "Выбрано контрагентов",
   "pages.banking.categoryModal.transactionsSelected": "Выбрано транзакций",
+  "pages.banking.report.itemsSelected": "Выбрано элементов: {count}",
   "EmployeeRoles": "Роли сотрудников",
   "EmployeeRoles.availableTickets": "Какие заявки видит сотрудник",
   "EmployeeRoles.availableTickets.allTickets": "все заявки",
