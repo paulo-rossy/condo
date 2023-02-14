@@ -1,7 +1,7 @@
 import { Row, Col } from 'antd'
 import get from 'lodash/get'
 import isNull from 'lodash/isNull'
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { ChevronDown } from '@open-condo/icons'
@@ -49,14 +49,23 @@ export const useCategoryModal: IUseCategoryModal = ({
     const SumTitle = intl.formatMessage({ id: 'global.sum' })
     const SaveTitle = intl.formatMessage({ id: 'Save' })
 
-    const { loading, bankCostItemGroups } = useBankCostItemContext()
+    const { loading, bankCostItemGroups, selectedItem, setSelectedItem } = useBankCostItemContext()
 
     const [open, setOpen] = useState(false)
     const [selectedCostItem, setSelectedCostItem] = useState(null)
 
+    useEffect(() => {
+        if (!isNull(selectedItem)) {
+            setOpen(true)
+        }
+    }, [selectedItem])
+
     const closeModal = useCallback(() => {
+        if (isNull(selectedItem)) {
+            setSelectedItem(null)
+        }
         setOpen(false)
-    }, [])
+    }, [setSelectedItem, selectedItem])
     const onGroupChange = useCallback((event) => {
         setSelectedCostItem(event.target.value)
     }, [])

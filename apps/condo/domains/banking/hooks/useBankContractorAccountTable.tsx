@@ -56,7 +56,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
         onCompleted: () => refetch(),
     })
     const [, bankContractorAccountTableColumns] = useTableColumns()
-    const { bankCostItems, loading: bankCostItemsLoading } = useBankCostItemContext()
+    const { bankCostItems, loading: bankCostItemsLoading, setSelectedItem } = useBankCostItemContext()
 
     const [selectedRows, setSelectedRows] = useState<Array<BankContractorAccountType>>([])
     const isLoading = loading || bankCostItemsLoading || updateLoading
@@ -69,6 +69,13 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
             setSelectedRows(selectedRows.filter(({ id }) => id !== selectedKey))
         }
     }, [selectedRows])
+    const handleRowClick = useCallback((row) => {
+        return {
+            onClick: () => {
+                setSelectedItem(row)
+            },
+        }
+    }, [setSelectedItem])
     const handleSelectAll = useCallback((checked) => {
         if (checked) {
             setSelectedRows(bankContractorAccounts)
@@ -82,9 +89,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
 
     const component = useMemo(() => (
         <Row gutter={TABLE_ROW_GUTTER}>
-            <Col span={24}>
-                <CategoryProgress data={bankContractorAccounts} entity='contractor' />
-            </Col>
+            <CategoryProgress data={bankContractorAccounts} entity='contractor' />
             <Col span={24}>
                 <Table
                     loading={isLoading}
@@ -104,10 +109,11 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
                         onSelectAll: handleSelectAll,
                         selectedRowKeys: selectedRows.map(row => row.id),
                     }}
+                    onRow={handleRowClick}
                 />
             </Col>
         </Row>
-    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll])
+    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll, handleRowClick])
 
     return { component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }

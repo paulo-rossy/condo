@@ -12,7 +12,7 @@ import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
 
 import { BankAccountVisibilitySelect } from '@condo/domains/banking/components/BankAccountVisibilitySelect'
-import { BankCostItemProvider, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
+import { BankCostItemProvider, PropertyReportTypes, useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
@@ -37,6 +37,8 @@ import { Property } from '@condo/domains/property/utils/clientSchema'
 import type {
     Property as PropertyType,
     BankAccount as BankAccountType,
+    BankTransaction as BankTransactionType,
+    BankContractorAccount as BankContractorAccountType,
 } from '@app/condo/schema'
 import type { RowProps, UploadProps } from 'antd'
 
@@ -113,6 +115,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const [categoryNotSet, setCategoryNotSet] = useState(false)
 
     // Hooks
+    const { selectedItem } = useBankCostItemContext()
     const {
         component: bankTransactionsTable,
         loading: bankTransactionsTableLoading,
@@ -129,8 +132,8 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
     const { categoryModal, setOpen } = useCategoryModal({
-        bankTransactions: selectedBankTransactions,
-        bankContractorAccounts: selectedContractorAccounts,
+        bankTransactions: selectedItem ? [selectedItem] as [BankTransactionType] : selectedBankTransactions,
+        bankContractorAccounts: selectedItem ? [selectedItem] as [BankContractorAccountType] : selectedContractorAccounts,
         type: tab,
         updateSelected: tab === 'contractor' ? updateBankContractors : updateBankTransactions,
     })

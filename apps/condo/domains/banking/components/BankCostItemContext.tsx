@@ -1,27 +1,37 @@
 import get from 'lodash/get'
 import groupBy from 'lodash/groupBy'
-import React, { createContext, useContext, useEffect, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 
 import type { RadioGroupProps } from '@open-condo/ui'
 
 import { BankCostItem } from '@condo/domains/banking/utils/clientSchema'
 
-import type { BankCostItem as BankCostItemType } from '@app/condo/schema'
+import type {
+    BankCostItem as BankCostItemType,
+    BankTransaction as BankTransactionType,
+    BankContractorAccount as BankContractorAccountType,
+} from '@app/condo/schema'
 
 interface IBankCostItemContext {
     bankCostItems: Array<BankCostItemType>
     bankCostItemGroups: RadioGroupProps['groups']
     loading: boolean
+    selectedItem: BankTransactionType | BankContractorAccountType | null
+    setSelectedItem: React.Dispatch<React.SetStateAction<BankTransactionType | BankContractorAccountType>>
 }
 export type PropertyReportTypes = 'income' | 'withdrawal' | 'contractor'
 
-const BankCostItemContext = createContext<IBankCostItemContext>({ bankCostItems: [], loading: false, bankCostItemGroups: [] })
+const BankCostItemContext = createContext<IBankCostItemContext>({
+    bankCostItems: [], loading: false, bankCostItemGroups: [], selectedItem: null, setSelectedItem: () => null,
+})
 
 export const useBankCostItemContext = (): IBankCostItemContext => useContext<IBankCostItemContext>(BankCostItemContext)
 
 export const BankCostItemProvider: React.FC = ({ children }) => {
-    const { objs: bankCostItems, loading } = BankCostItem.useObjects({})
+    const { objs: bankCostItems, loading } = BankCostItem.useObjects({}, { fetchPolicy: 'cache-first' })
+
     const bankCostItemGroups = useRef<RadioGroupProps['groups']>([])
+    const [selectedItem, setSelectedItem] = useState<BankTransactionType | BankContractorAccountType | null>(null)
 
     useEffect(() => {
         if (!loading) {
@@ -43,7 +53,7 @@ export const BankCostItemProvider: React.FC = ({ children }) => {
 
     return (
         <BankCostItemContext.Provider
-            value={{ bankCostItems, loading, bankCostItemGroups: bankCostItemGroups.current }}
+            value={{ bankCostItems, loading, bankCostItemGroups: bankCostItemGroups.current, selectedItem, setSelectedItem }}
         >
             {children}
         </BankCostItemContext.Provider>

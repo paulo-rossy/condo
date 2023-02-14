@@ -43,36 +43,38 @@ const CategoryProgress: ICategoryProgress = ({ data, entity }) => {
     }
 
     return (
-        <Row gutter={CATEGORY_PROGRESS_ROW_GUTTER} justify='space-between'>
-            <Col>
-                <Space direction='horizontal' size={12} align='center'>
-                    <Typography.Text>
-                        {intl.formatMessage({ id: 'pages.banking.categoryProgress.title' }, {
-                            entity: activeEntity,
+        <Col span={24}>
+            <Row gutter={CATEGORY_PROGRESS_ROW_GUTTER} justify='space-between'>
+                <Col>
+                    <Space direction='horizontal' size={12} align='center'>
+                        <Typography.Text>
+                            {intl.formatMessage({ id: 'pages.banking.categoryProgress.title' }, {
+                                entity: activeEntity,
+                            })}
+                        </Typography.Text>
+                        <Tooltip title={tooltipTitle}>
+                            <div style={CATEGORY_PROGRESS_ICON_WRAPPER_STYLE}><AlertCircle size='medium'/></div>
+                        </Tooltip>
+                    </Space>
+                </Col>
+                <Col>
+                    <Typography.Text type='danger' size='small'>
+                        {intl.formatMessage({ id: 'pages.banking.categoryProgress.description' }, {
+                            percent: 100 - percent,
                         })}
                     </Typography.Text>
-                    <Tooltip title={tooltipTitle}>
-                        <div style={CATEGORY_PROGRESS_ICON_WRAPPER_STYLE}><AlertCircle size='medium'/></div>
-                    </Tooltip>
-                </Space>
-            </Col>
-            <Col>
-                <Typography.Text type='danger' size='small'>
-                    {intl.formatMessage({ id: 'pages.banking.categoryProgress.description' }, {
-                        percent: 100 - percent,
-                    })}
-                </Typography.Text>
-            </Col>
-            <Col span={24}>
-                <Progress
-                    type='line'
-                    showInfo={false}
-                    trailColor={colors.warningText}
-                    strokeColor={colors.infoIconColor}
-                    percent={percent}
-                />
-            </Col>
-        </Row>
+                </Col>
+                <Col span={24}>
+                    <Progress
+                        type='line'
+                        showInfo={false}
+                        trailColor={colors.warningText}
+                        strokeColor={colors.infoIconColor}
+                        percent={percent}
+                    />
+                </Col>
+            </Row>
+        </Col>
     )
 }
 

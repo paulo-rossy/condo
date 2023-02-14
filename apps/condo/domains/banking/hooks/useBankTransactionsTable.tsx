@@ -50,7 +50,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     const { filters, offset } = parseQuery(router.query)
     const queryMeta = useTableFilters()
     const { filtersToWhere } = useQueryMappers(queryMeta, [])
-    const { bankCostItems, loading: bankCostItemsLoading } = useBankCostItemContext()
+    const { bankCostItems, loading: bankCostItemsLoading, setSelectedItem } = useBankCostItemContext()
 
     const { bankAccount, type, categoryNotSet } = props
 
@@ -73,7 +73,6 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     const [bankTransactionTableColumns] = useTableColumns()
 
     const [selectedRows, setSelectedRows] = useState([])
-    const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const handleSelectRow = useCallback((record, checked) => {
         const selectedKey = record.id
@@ -86,11 +85,10 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     const handleRowClick = useCallback((row) => {
         return {
             onClick: () => {
-                // TODO: open modal with this row
-                console.log('need to open modal with clicked row ', row)
+                setSelectedItem(row)
             },
         }
-    }, [])
+    }, [setSelectedItem])
     const handleSelectAll = useCallback((checked) => {
         if (checked) {
             setSelectedRows(bankTransactions)
@@ -102,11 +100,11 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
         setSelectedRows([])
     }
 
+    const isLoading = loading || bankCostItemsLoading || updateLoading
+
     const component = useMemo(() => (
         <Row gutter={TABLE_ROW_GUTTER}>
-            <Col span={24}>
-                <CategoryProgress data={bankTransactions} entity={type} />
-            </Col>
+            <CategoryProgress data={bankTransactions} entity={type} />
             <Col span={24}>
                 <Table
                     loading={isLoading}
