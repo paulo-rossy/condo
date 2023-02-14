@@ -13288,6 +13288,7 @@ type BankAccountHistoryRecord {
   bankName: String
   meta: JSON
   reportVisible: Boolean
+  hasData: JSON
   propertyBalance: JSON
   id: ID!
   v: Int
@@ -13489,6 +13490,10 @@ input BankAccountHistoryRecordWhereInput {
   meta_not_in: [JSON]
   reportVisible: Boolean
   reportVisible_not: Boolean
+  hasData: JSON
+  hasData_not: JSON
+  hasData_in: [JSON]
+  hasData_not_in: [JSON]
   propertyBalance: JSON
   propertyBalance_not: JSON
   propertyBalance_in: [JSON]
@@ -13632,6 +13637,7 @@ input BankAccountHistoryRecordUpdateInput {
   bankName: String
   meta: JSON
   reportVisible: Boolean
+  hasData: JSON
   propertyBalance: JSON
   v: Int
   createdAt: String
@@ -13670,6 +13676,7 @@ input BankAccountHistoryRecordCreateInput {
   bankName: String
   meta: JSON
   reportVisible: Boolean
+  hasData: JSON
   propertyBalance: JSON
   v: Int
   createdAt: String
@@ -13774,6 +13781,10 @@ type BankAccount {
 
   """ Determines visibility of the report for residents """
   reportVisible: Boolean
+
+  """ Marker that transactions or contractors was imported and not soft deleted 
+  """
+  hasData: Boolean
 
   """ Total balance based on current account transactions for the previous period 
   """

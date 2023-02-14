@@ -5797,6 +5797,8 @@ export type BankAccount = {
   meta?: Maybe<Scalars['JSON']>;
   /**  Determines visibility of the report for residents  */
   reportVisible?: Maybe<Scalars['Boolean']>;
+  /**  Marker that transactions or contractors was imported and not soft deleted  */
+  hasData?: Maybe<Scalars['Boolean']>;
   /**  Total balance based on current account transactions for the previous period  */
   propertyBalance?: Maybe<Scalars['String']>;
   id: Scalars['ID'];
@@ -5877,6 +5879,7 @@ export type BankAccountHistoryRecord = {
   bankName?: Maybe<Scalars['String']>;
   meta?: Maybe<Scalars['JSON']>;
   reportVisible?: Maybe<Scalars['Boolean']>;
+  hasData?: Maybe<Scalars['JSON']>;
   propertyBalance?: Maybe<Scalars['JSON']>;
   id: Scalars['ID'];
   v?: Maybe<Scalars['Int']>;
@@ -5911,6 +5914,7 @@ export type BankAccountHistoryRecordCreateInput = {
   bankName?: Maybe<Scalars['String']>;
   meta?: Maybe<Scalars['JSON']>;
   reportVisible?: Maybe<Scalars['Boolean']>;
+  hasData?: Maybe<Scalars['JSON']>;
   propertyBalance?: Maybe<Scalars['JSON']>;
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
@@ -5950,6 +5954,7 @@ export type BankAccountHistoryRecordUpdateInput = {
   bankName?: Maybe<Scalars['String']>;
   meta?: Maybe<Scalars['JSON']>;
   reportVisible?: Maybe<Scalars['Boolean']>;
+  hasData?: Maybe<Scalars['JSON']>;
   propertyBalance?: Maybe<Scalars['JSON']>;
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
@@ -6150,6 +6155,10 @@ export type BankAccountHistoryRecordWhereInput = {
   meta_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
   reportVisible?: Maybe<Scalars['Boolean']>;
   reportVisible_not?: Maybe<Scalars['Boolean']>;
+  hasData?: Maybe<Scalars['JSON']>;
+  hasData_not?: Maybe<Scalars['JSON']>;
+  hasData_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  hasData_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
   propertyBalance?: Maybe<Scalars['JSON']>;
   propertyBalance_not?: Maybe<Scalars['JSON']>;
   propertyBalance_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;

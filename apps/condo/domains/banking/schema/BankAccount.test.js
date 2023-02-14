@@ -54,6 +54,9 @@ describe('BankAccount', () => {
                 expect(objCreated.number).toBeDefined()
                 expect(objCreated.currencyCode).toEqual('RUB')
                 expect(objCreated.integrationContext).toMatchObject(pick(bankIntegrationAccountContext, ['id', 'enabled']))
+                expect(objCreated).toHaveProperty('reportVisible', false)
+                expect(objCreated).toHaveProperty('hasData', false)
+                expect(objCreated).toHaveProperty('propertyBalance', '0')
             })
 
             test('support can', async () => {

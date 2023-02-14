@@ -186,6 +186,15 @@ const BankAccount = new GQLListSchema('BankAccount', {
             defaultValue: false,
         },
 
+        hasData: {
+            schemaDoc: 'Marker that transactions or contractors was imported and not soft deleted',
+            type: Virtual,
+            graphQLReturnType: 'Boolean',
+            resolver: async (item, _, context) => {
+                return Boolean(await BankTransaction.count(context, { account: { id: item.id }, deletedAt: null }))
+            },
+        },
+
         propertyBalance: {
             schemaDoc: 'Total balance based on current account transactions for the previous period',
             type: Virtual,

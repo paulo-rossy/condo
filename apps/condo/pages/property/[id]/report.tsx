@@ -1,4 +1,5 @@
 import { Row, Col, Tabs, Space, Upload } from 'antd'
+import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -314,7 +315,7 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
         },
     })
 
-    const hasBankAccount = !loading && !isNull(bankAccount)
+    const hasBankAccount = !loading && get(bankAccount, 'hasData', false)
 
     if (loading) {
         return (<Loader fill />)
