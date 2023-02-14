@@ -1,4 +1,4 @@
-import { Row, Col, Tabs, Space } from 'antd'
+import { Row, Col, Tabs, Space, Upload } from 'antd'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -36,10 +36,10 @@ import type {
     Property as PropertyType,
     BankAccount as BankAccountType,
 } from '@app/condo/schema'
-import type { RowProps } from 'antd'
+import type { RowProps, UploadProps } from 'antd'
 
 const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [24, 20]
-const PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER: RowProps['gutter'] = [0, 60]
+const PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER: RowProps['gutter'] = [0, 40]
 const PROPERTY_REPORT_PAGE_ROW_TABLE_GUTTER: RowProps['gutter'] = [0, 40]
 const DATE_DISPLAY_FORMAT = {
     day: 'numeric',
@@ -66,6 +66,12 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
     const LoginBySBBOLTitle = intl.formatMessage({ id: 'LoginBySBBOL' })
     const ImportFileTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.importFileTitle' })
 
+    const uploadOptions: UploadProps = {
+        multiple: false,
+        itemRender: () => null,
+        accept: '.txt',
+    }
+
     return (
         <BasicEmptyListView image='/dino/searching@2x.png' spaceSize={20}>
             <Typography.Title level={3}>{ImportBankAccountTitle}</Typography.Title>
@@ -80,7 +86,9 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
             >
                 {LoginBySBBOLTitle}
             </DeprecatedButton>
-            <Button type='secondary' stateless>{ImportFileTitle}</Button>
+            <Upload {...uploadOptions}>
+                <Button type='secondary' stateless>{ImportFileTitle}</Button>
+            </Upload>
         </BasicEmptyListView>
     )
 }
@@ -317,7 +325,7 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                                 <Typography.Text>
                                     {property.address}
                                 </Typography.Text>
-                                {hasBankAccount ? (
+                                {hasBankAccount && (
                                     <>
                                 &nbsp;
                                         <Typography.Text type='secondary'>
@@ -335,11 +343,13 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                                             }
                                         </Typography.Paragraph>
                                     </>
-                                ) : null}
+                                )}
                             </Col>
-                            <Col>
-                                <BankAccountVisibilitySelect bankAccount={bankAccount} />
-                            </Col>
+                            {hasBankAccount && (
+                                <Col>
+                                    <BankAccountVisibilitySelect bankAccount={bankAccount} />
+                                </Col>
+                            )}
                         </Row>
                     </Col>
                 </Row>
