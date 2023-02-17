@@ -924,6 +924,7 @@
   "pages.banking.report.choosePropertyPlaceholder": "Choose property",
   "pages.banking.report.importHelpText": "{isSingular, plural, other {Choose address and account, created for selected property. Reports can be created for all properties at once.} one {Confirm, that bank account relates to this property}}",
   "pages.banking.report.addAnotherBankAccount": "Add another one property and bank account",
+  "pages.banking.report.validation.notUnique": "Property can be connected to a single bank account. Please change property",
   "EmployeeRoles": "Employee roles",
   "EmployeeRoles.availableTickets": "Which tickets the employee sees",
   "EmployeeRoles.availableTickets.allTickets": "all tickets",

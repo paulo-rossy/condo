@@ -924,6 +924,7 @@
   "pages.banking.report.choosePropertyPlaceholder": "Выберите дом",
   "pages.banking.report.importHelpText": "{isSingular, plural, other {Выберите адрес и счет, открытый для указанного дома. Отчеты можно создать сразу для всех домов.} one {Подтвердите, что расчетный счет принадлежит этому дому}}",
   "pages.banking.report.addAnotherBankAccount": "Добавить еще один дом и расчетный счет",
+  "pages.banking.report.validation.notUnique": "Дом может быть привязан только к одному Рсч. Поменяйте дом",
   "EmployeeRoles": "Роли сотрудников",
   "EmployeeRoles.availableTickets": "Какие заявки видит сотрудник",
   "EmployeeRoles.availableTickets.allTickets": "все заявки",
