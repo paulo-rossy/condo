@@ -5,7 +5,7 @@
 const dayjs = require('dayjs')
 const { pick } = require('lodash')
 
-const { makeLoggedInAdminClient, makeClient, expectToThrowValidationFailureError } = require('@open-condo/keystone/test.utils')
+const { makeLoggedInAdminClient, makeClient, expectToThrowValidationFailureError, UUID_RE } = require('@open-condo/keystone/test.utils')
 const {
     expectToThrowAuthenticationErrorToObj, expectToThrowAuthenticationErrorToObjects,
     expectToThrowAccessDeniedErrorToObj, catchErrorFrom,
@@ -79,6 +79,25 @@ describe('BankAccount', () => {
                 await expectToThrowAccessDeniedErrorToObj(async () => {
                     await createTestBankAccount(user, organization)
                 })
+            })
+
+            test('user can if it is an employee of organization with "canManageBankAccounts" permission ', async () => {
+                const userClient = await makeClientWithNewRegisteredAndLoggedInUser()
+                const [organization] = await createTestOrganization(adminClient)
+                const [role] = await createTestOrganizationEmployeeRole(adminClient, organization, {
+                    canManageBankAccounts: true,
+                })
+                await createTestOrganizationEmployee(adminClient, organization, userClient.user, role)
+                const [bankIntegrationContext] = await createTestBankIntegrationContext(adminClient, bankIntegration, organization)
+
+                const [objCreated, attrs] = await createTestBankAccount(userClient, organization, {
+                    integrationContext: { connect: { id: bankIntegrationContext.id } },
+                })
+
+                expect(objCreated.id).toMatch(UUID_RE)
+                expect(objCreated.dv).toEqual(1)
+                expect(objCreated.sender).toEqual(attrs.sender)
+                expect(objCreated.createdBy).toEqual(expect.objectContaining({ id: userClient.user.id }))
             })
 
             test('anonymous can\'t', async () => {
@@ -200,6 +219,26 @@ describe('BankAccount', () => {
 
                 expect(createdObj.id).toEqual(updatedObj.id)
                 expect(updatedObj.bankName).toEqual('NewBankName')
+            })
+
+            test('user can if it is an employee of organization with "canManageBankAccounts" permission', async () => {
+                const userClient = await makeClientWithNewRegisteredAndLoggedInUser()
+                const [organization] = await createTestOrganization(adminClient)
+                const [role] = await createTestOrganizationEmployeeRole(adminClient, organization, {
+                    canManageBankAccounts: true,
+                })
+                await createTestOrganizationEmployee(adminClient, organization, userClient.user, role)
+                const [bankIntegrationContext] = await createTestBankIntegrationContext(adminClient, bankIntegration, organization)
+
+                const [objCreated] = await createTestBankAccount(adminClient, organization, {
+                    integrationContext: { connect: { id: bankIntegrationContext.id } },
+                })
+
+                const [obj, attrs] = await updateTestBankAccount(userClient, objCreated.id, { bankName: 'NewBankName' })
+
+                expect(obj).toHaveProperty('dv', 1)
+                expect(obj).toHaveProperty('sender', attrs.sender)
+                expect(obj).toHaveProperty('v', 2)
             })
 
             test('user can\'t', async () => {
