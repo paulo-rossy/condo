@@ -1,16 +1,18 @@
 /** @jsx jsx */
-import { css, jsx } from '@emotion/react'
+import { jsx } from '@emotion/react'
 import styled from '@emotion/styled'
-import { Row, Col, Form, FormProps } from 'antd'
+import { Row, Col, Form } from 'antd'
 import get from 'lodash/get'
-import { useRouter } from 'next/router'
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 
+import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { PlusCircle, XCircle } from '@open-condo/icons'
+import { useMutation } from '@open-condo/next/apollo'
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Modal, Select, Option, Alert, Button, Typography, Space } from '@open-condo/ui'
 
+import { BankAccount as BankAccountGQL } from '@condo/domains/banking/gql'
 import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
 import { useValidations } from '@condo/domains/common/hooks/useValidations'
 import { Property } from '@condo/domains/property/utils/clientSchema'
@@ -28,7 +30,7 @@ const TextButton = styled.div`
 `
 
 interface ISbbolImportModal {
-    ({ open }: { open: boolean }): React.ReactElement
+    ({ propertyId }: { propertyId: string }): React.ReactElement
 }
 
 const validateFormItems = (items: Array<{ property?: string, bankAccount?: string }>) => {
@@ -40,7 +42,7 @@ const validateFormItems = (items: Array<{ property?: string, bankAccount?: strin
     return allValuesSet && allValuesUnique
 }
 
-const SbbolImportModal: ISbbolImportModal = ({ open }) => {
+const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
     const intl = useIntl()
     const SetupSyncTitle = intl.formatMessage({ id: 'pages.banking.report.accountSetupTitle' })
     const BankAccountNotFoundTitle = intl.formatMessage({ id: 'pages.banking.report.accountNotFound' })
@@ -53,7 +55,6 @@ const SbbolImportModal: ISbbolImportModal = ({ open }) => {
     const AddTitle = intl.formatMessage({ id: 'pages.banking.report.addAnotherBankAccount' })
     const CancelTitle = intl.formatMessage({ id: 'Cancel' })
 
-    const { query: { id } } = useRouter()
     const { organization } = useOrganization()
     const { objs: bankAccounts, loading: bankAccountsLoading } = BankAccount.useObjects({
         where: {
@@ -64,26 +65,29 @@ const SbbolImportModal: ISbbolImportModal = ({ open }) => {
     const { objs: properties, loading: propertiesLoading } = Property.useObjects({
         where: { organization: { id: get(organization, 'id') } },
     })
+    const [updateBankAccounts, { loading: updateActionLoading }] = useMutation(BankAccountGQL.UPDATE_OBJS_MUTATION, {
+        onCompleted: () => setIsOpen(false),
+    })
     const { requiredValidator } = useValidations()
     const [form] = Form.useForm()
     const formWatch = Form.useWatch('items', form)
 
+    const [isOpen, setIsOpen] = useState(true)
     const [isValid, setIsValid] = useState(false)
 
     useEffect(() => {
         if (!propertiesLoading && !bankAccountsLoading) {
             if (bankAccounts.length === 1) {
-                form.setFieldValue(['items', 0, 'property'], id)
+                form.setFieldValue(['items', 0, 'property'], propertyId)
                 form.setFieldValue(['items', 0, 'bankAccount'], bankAccounts[0].id)
             } else if (bankAccounts.length > 1 && properties.length > 1) {
-                form.setFieldValue(['items', 0, 'property'], id)
+                form.setFieldValue(['items', 0, 'property'], propertyId)
             }
         }
-    }, [propertiesLoading, properties, bankAccountsLoading, bankAccounts, id])
+    }, [propertiesLoading, properties, bankAccountsLoading, bankAccounts, propertyId])
     useEffect(() => {
-        const values = formWatch ? formWatch : []
-        if (values.length) {
-            const validationResult = validateFormItems(values)
+        if (formWatch && formWatch.length) {
+            const validationResult = validateFormItems(formWatch)
             form.validateFields()
             setIsValid(validationResult)
         }
@@ -92,13 +96,30 @@ const SbbolImportModal: ISbbolImportModal = ({ open }) => {
     const handleRemove = useCallback((remove) => {
         remove(formWatch.length - 1)
     }, [formWatch])
-    const handleSubmit = useCallback(() => {
-        console.log(form.getFieldsValue())
-    }, [form])
+    const handleSubmit = useCallback(async () => {
+        if (formWatch && isValid) {
+            const sender = getClientSideSenderInfo()
+
+            await updateBankAccounts({
+                variables: {
+                    data: formWatch.map(item => ({
+                        id: item.bankAccount,
+                        data: {
+                            dv: 1,
+                            sender,
+                            property: { connect: { id: item.property } },
+                        },
+                    })),
+                },
+            })
+        }
+    }, [formWatch, isValid, updateBankAccounts])
     const uniqueItemValidator = useCallback((itemKey: string, index: number) => ({
         message: NotUniqueError,
         validator: (_, value) => {
             const formValues = formWatch ? formWatch : []
+            if (formValues.length - 1 !== index) return Promise.resolve()
+
             const selectedValues = formValues.map(item => get(item, itemKey))
             selectedValues.splice(index, 1)
             if (selectedValues.includes(value)) {
@@ -111,15 +132,26 @@ const SbbolImportModal: ISbbolImportModal = ({ open }) => {
     const hasBankAccounts = !bankAccountsLoading && bankAccounts.length
     const formValues = formWatch ? formWatch : []
 
+    const modalFooter = useMemo(() => {
+        if (!hasBankAccounts) return null
+        return (
+            <Button
+                type='primary'
+                loading={updateActionLoading}
+                disabled={!isValid}
+                onClick={handleSubmit}
+            >
+                {SaveTitle}
+            </Button>
+        )
+    }, [hasBankAccounts, isValid, updateActionLoading, SaveTitle, handleSubmit])
+
     return (
         <Modal
             title={hasBankAccounts ? SetupSyncTitle : BankAccountNotFoundTitle}
-            open={open}
-            footer={
-                hasBankAccounts ?
-                    <Button type='primary' disabled={!isValid} onClick={handleSubmit}>{SaveTitle}</Button>
-                    : null
-            }
+            open={isOpen}
+            onCancel={() => setIsOpen(false)}
+            footer={modalFooter}
         >
             <Row gutter={MODAL_ROW_GUTTER}>
                 <Col span={24}>

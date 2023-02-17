@@ -1,6 +1,5 @@
 import { Row, Col, Tabs, Space, Upload } from 'antd'
 import get from 'lodash/get'
-import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -13,6 +12,7 @@ import { Typography, Button, Checkbox } from '@open-condo/ui'
 
 import { BankAccountVisibilitySelect } from '@condo/domains/banking/components/BankAccountVisibilitySelect'
 import { BankCostItemProvider, PropertyReportTypes, useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+import { SbbolImportModal } from '@condo/domains/banking/components/SbbolImportModal'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
@@ -52,6 +52,7 @@ const DATE_DISPLAY_FORMAT = {
     hour: 'numeric',
     minute: 'numeric',
 }
+const SBBOL_SYNC_CALLBACK_QUERY = 'sbbol-sync-callback'
 
 interface IPropertyReportPageContent {
     ({ property }: { property: PropertyType }): React.ReactElement
@@ -69,6 +70,11 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
     const ImportBankAccountDescription = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.description' })
     const LoginBySBBOLTitle = intl.formatMessage({ id: 'LoginBySBBOL' })
     const ImportFileTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.importFileTitle' })
+
+    const { query } = useRouter()
+    const { id } = query
+
+    const hasSuccessCallback = query.hasOwnProperty(SBBOL_SYNC_CALLBACK_QUERY)
 
     const uploadOptions: UploadProps = {
         multiple: false,
@@ -93,6 +99,9 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
             <Upload {...uploadOptions}>
                 <Button type='secondary' stateless>{ImportFileTitle}</Button>
             </Upload>
+            {hasSuccessCallback && (
+                <SbbolImportModal propertyId={id as string} />
+            )}
         </BasicEmptyListView>
     )
 }
