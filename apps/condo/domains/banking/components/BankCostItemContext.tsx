@@ -35,7 +35,7 @@ export const BankCostItemProvider: React.FC = ({ children }) => {
 
     useEffect(() => {
         if (!loading) {
-            const categoryObject = groupBy(bankCostItems, (costItem) => costItem.category.id)
+            const categoryObject = groupBy(bankCostItems.filter(costItem => costItem.isOutcome), (costItem) => costItem.category.id)
 
             Object.values(categoryObject).forEach(costItems => {
                 bankCostItemGroups.current.push({

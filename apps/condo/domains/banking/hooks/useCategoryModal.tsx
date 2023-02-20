@@ -4,9 +4,8 @@ import isNull from 'lodash/isNull'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
-import { ChevronDown } from '@open-condo/icons'
 import { useIntl } from '@open-condo/next/intl'
-import { Modal, Typography, List, RadioGroup, Space, Button } from '@open-condo/ui'
+import { Modal, Typography, List, RadioGroup, Radio, Space, Button } from '@open-condo/ui'
 
 import { useBankCostItemContext, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 
@@ -49,7 +48,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     const SumTitle = intl.formatMessage({ id: 'global.sum' })
     const SaveTitle = intl.formatMessage({ id: 'Save' })
 
-    const { loading, bankCostItemGroups, selectedItem, setSelectedItem } = useBankCostItemContext()
+    const { loading, bankCostItemGroups, selectedItem, bankCostItems, setSelectedItem } = useBankCostItemContext()
 
     const [open, setOpen] = useState(false)
     const [selectedCostItem, setSelectedCostItem] = useState(null)
@@ -166,17 +165,29 @@ export const useCategoryModal: IUseCategoryModal = ({
                     <Col span={24}>
                         <Space direction='vertical' size={24}>
                             <Typography.Title level={3}>{ChooseCategoryTitle}</Typography.Title>
-                            <RadioGroup
-                                onChange={onGroupChange}
-                                icon={<ChevronDown size='small' />}
-                                groups={bankCostItemGroups}
-                            />
+                            {type === 'income' ? (
+                                <RadioGroup onChange={onGroupChange}>
+                                    <Space direction='vertical' size={12}>
+                                        {bankCostItems.filter(item => !item.isOutcome).map(item => (
+                                            <Radio key={item.id} label={item.name} value={item.id} />
+                                        ))}
+                                    </Space>
+                                </RadioGroup>
+                            ) : (
+                                <RadioGroup
+                                    onChange={onGroupChange}
+                                    groups={bankCostItemGroups}
+                                />
+                            )}
                         </Space>
                     </Col>
                 </Row>
             </Modal>
         )
-    }, [type, open, closeModal, selectedCostItem, loading, handleSave, SaveTitle, ChooseCategoryTitle, onGroupChange, bankCostItemGroups, intl, bankTransactions, TransactionTitle, PaymentPurposeTitle, SumTitle, IncomeTitle, WithdrawalTitle, TransactionsSelectedTitle, bankContractorAccounts, ContractorTitle, BankAccountTitle, ContractorsSelectedTitle])
+    }, [type, open, closeModal, selectedCostItem, loading, handleSave, SaveTitle, ChooseCategoryTitle, onGroupChange,
+        bankCostItemGroups, intl, bankTransactions, TransactionTitle, PaymentPurposeTitle, SumTitle, IncomeTitle,
+        WithdrawalTitle, TransactionsSelectedTitle, bankContractorAccounts, ContractorTitle, BankAccountTitle,
+        ContractorsSelectedTitle, bankCostItems])
 
     return { categoryModal, setOpen }
 }
