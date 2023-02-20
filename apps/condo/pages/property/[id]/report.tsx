@@ -126,14 +126,14 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     // Hooks
     const { selectedItem } = useBankCostItemContext()
     const {
-        component: bankTransactionsTable,
+        Component: BankTransactionsTable,
         loading: bankTransactionsTableLoading,
         selectedRows: selectedBankTransactions,
         clearSelection: clearBankTransactionSelection,
         updateSelected: updateBankTransactions,
     } = useBankTransactionsTable({ bankAccount, type: tab, categoryNotSet })
     const {
-        component: bankContractorAccountTable,
+        Component: BankContractorAccountTable,
         selectedRows: selectedContractorAccounts,
         clearSelection: clearBankContractorSelection,
         updateSelected: updateBankContractors,
@@ -171,28 +171,16 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         setOpen(true)
     }, [setOpen])
     const handleDeleteSelected = useCallback(async () => {
-        const sender = getClientSideSenderInfo()
-        if (tab !== 'contractor' && selectedBankTransactions.length) {
-            await updateBankTransactions({
+        const bankListPayload = tab === 'contractor' ? selectedContractorAccounts : selectedBankTransactions
+
+        if (bankListPayload.length) {
+            const sender = getClientSideSenderInfo()
+            const updateAction = tab === 'contractor' ? updateBankContractors : updateBankTransactions
+            await updateAction({
                 variables: {
-                    data: selectedBankTransactions.map(transaction => {
+                    data: bankListPayload.map(item => {
                         return {
-                            id: transaction.id,
-                            data: {
-                                dv: 1,
-                                sender,
-                                deletedAt: new Date().toDateString(),
-                            },
-                        }
-                    }),
-                },
-            })
-        } else if (selectedContractorAccounts.length) {
-            await updateBankContractors({
-                variables: {
-                    data: selectedContractorAccounts.map(contractor => {
-                        return {
-                            id: contractor.id,
+                            id: item.id,
                             data: {
                                 dv: 1,
                                 sender,
@@ -210,11 +198,11 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         switch (tab) {
             case 'income':
             case 'withdrawal':
-                return bankTransactionsTable
+                return <BankTransactionsTable />
             case 'contractor':
-                return bankContractorAccountTable
+                return <BankContractorAccountTable />
         }
-    }, [tab, bankContractorAccountTable, bankTransactionsTable])
+    }, [tab, BankContractorAccountTable, BankTransactionsTable])
 
     const totalSelectedItems = selectedBankTransactions.length || selectedContractorAccounts.length
     const deleteModalTitle = selectedBankTransactions.length

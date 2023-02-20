@@ -30,7 +30,7 @@ interface IUseBankContractorAccountTable {
         organizationId: string,
         categoryNotSet: boolean
     }): {
-        component: JSX.Element,
+        Component: React.FC,
         loading: boolean,
         selectedRows: Array<BankContractorAccountType>,
         clearSelection: () => void,
@@ -87,35 +87,37 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
         setSelectedRows([])
     }
 
-    const component = useMemo(() => (
-        <Row gutter={TABLE_ROW_GUTTER}>
-            <CategoryProgress data={bankContractorAccounts} entity='contractor' />
-            <Col span={24}>
-                <Table
-                    loading={isLoading}
-                    dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
-                        const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
+    const Component = useMemo(() => {
+        return () => (
+            <Row gutter={TABLE_ROW_GUTTER}>
+                <CategoryProgress data={bankContractorAccounts} entity='contractor'/>
+                <Col span={24}>
+                    <Table
+                        loading={isLoading}
+                        dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
+                            const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
 
-                        if (costItem) {
-                            bankContractor.costItem = costItem
-                        }
+                            if (costItem) {
+                                bankContractor.costItem = costItem
+                            }
 
-                        return bankContractor
-                    })}
-                    columns={bankContractorAccountTableColumns}
-                    rowSelection={{
-                        type: 'checkbox',
-                        onSelect: handleSelectRow,
-                        onSelectAll: handleSelectAll,
-                        selectedRowKeys: selectedRows.map(row => row.id),
-                    }}
-                    onRow={handleRowClick}
-                />
-            </Col>
-        </Row>
-    ), [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll, handleRowClick])
+                            return bankContractor
+                        })}
+                        columns={bankContractorAccountTableColumns}
+                        rowSelection={{
+                            type: 'checkbox',
+                            onSelect: handleSelectRow,
+                            onSelectAll: handleSelectAll,
+                            selectedRowKeys: selectedRows.map(row => row.id),
+                        }}
+                        onRow={handleRowClick}
+                    />
+                </Col>
+            </Row>
+        )
+    }, [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll, handleRowClick])
 
-    return { component, loading: isLoading, selectedRows, clearSelection, updateSelected }
+    return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }
 
 export default useBankContractorAccountTable

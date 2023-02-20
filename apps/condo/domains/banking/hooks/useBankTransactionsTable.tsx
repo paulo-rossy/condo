@@ -22,6 +22,7 @@ import type {
 } from '@app/condo/schema'
 import type { PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 import type { RowProps } from 'antd'
+import type { TableRowSelection } from 'antd/lib/table/interface'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
 
@@ -37,7 +38,7 @@ interface IUseBankContractorAccountTable {
         type: PropertyReportTypes,
         categoryNotSet: boolean
     }): {
-        component: JSX.Element,
+        Component: React.FC,
         loading: boolean,
         selectedRows: Array<BankTransactionType>,
         clearSelection: () => void,
@@ -100,37 +101,44 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
         setSelectedRows([])
     }
 
+    const rowSelection: TableRowSelection<BankTransactionType> = useMemo(() => ({
+        type: 'checkbox',
+        onSelect: handleSelectRow,
+        onSelectAll: handleSelectAll,
+        selectedRowKeys: selectedRows.map(row => row.id),
+    }), [handleSelectRow, handleSelectAll, selectedRows])
+    const dataSource = useMemo(() => {
+        return bankTransactions.map(({ ...transaction }) => {
+            const costItem = bankCostItems.find(costItem => costItem.id === get(transaction, 'costItem.id'))
+
+            if (costItem) {
+                transaction.costItem = costItem
+            }
+
+            return transaction
+        })
+    }, [bankCostItems, bankTransactions])
+
     const isLoading = loading || bankCostItemsLoading || updateLoading
 
-    const component = useMemo(() => (
-        <Row gutter={TABLE_ROW_GUTTER}>
-            <CategoryProgress data={bankTransactions} entity={type} />
-            <Col span={24}>
-                <Table
-                    loading={isLoading}
-                    dataSource={bankTransactions.map(({ ...transaction }) => {
-                        const costItem = bankCostItems.find(costItem => costItem.id === get(transaction, 'costItem.id'))
+    const Component = useMemo(() => {
+        return () => (
+            <Row gutter={TABLE_ROW_GUTTER}>
+                <CategoryProgress data={bankTransactions} entity={type}/>
+                <Col span={24}>
+                    <Table
+                        loading={isLoading}
+                        dataSource={dataSource}
+                        columns={bankTransactionTableColumns}
+                        rowSelection={rowSelection}
+                        onRow={handleRowClick}
+                    />
+                </Col>
+            </Row>
+        )
+    }, [isLoading, bankTransactions, dataSource, bankTransactionTableColumns, handleRowClick, type, rowSelection])
 
-                        if (costItem) {
-                            transaction.costItem = costItem
-                        }
-
-                        return transaction
-                    })}
-                    columns={bankTransactionTableColumns}
-                    rowSelection={{
-                        type: 'checkbox',
-                        onSelect: handleSelectRow,
-                        onSelectAll: handleSelectAll,
-                        selectedRowKeys: selectedRows.map(row => row.id),
-                    }}
-                    onRow={handleRowClick}
-                />
-            </Col>
-        </Row>
-    ), [isLoading, bankTransactions, bankCostItems, bankTransactionTableColumns, handleRowClick, handleSelectRow, handleSelectAll, selectedRows, type])
-
-    return { component, loading: isLoading, selectedRows, clearSelection, updateSelected }
+    return { Component,  loading: isLoading, selectedRows, clearSelection, updateSelected }
 }
 
 export default useBankContractorAccountTable

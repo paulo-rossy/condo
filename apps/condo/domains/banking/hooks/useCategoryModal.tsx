@@ -61,7 +61,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     }, [selectedItem])
 
     const closeModal = useCallback(() => {
-        if (isNull(selectedItem)) {
+        if (!isNull(selectedItem)) {
             setSelectedItem(null)
         }
         setOpen(false)
