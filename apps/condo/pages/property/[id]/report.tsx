@@ -13,6 +13,7 @@ import { Typography, Button, Checkbox } from '@open-condo/ui'
 import { BankAccountVisibilitySelect } from '@condo/domains/banking/components/BankAccountVisibilitySelect'
 import { BankCostItemProvider, PropertyReportTypes, useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import { SbbolImportModal } from '@condo/domains/banking/components/SbbolImportModal'
+import { BANK_INTEGRATION_IDS } from '@condo/domains/banking/constants'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
@@ -212,6 +213,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         ? intl.formatMessage({ id: 'pages.banking.removeModal.transaction.description' }, { count: selectedBankTransactions.length })
         : intl.formatMessage({ id: 'pages.banking.removeModal.contractor.description' }, { count: selectedContractorAccounts.length })
     const itemsSelectedTitle = intl.formatMessage({ id: 'pages.banking.report.itemsSelected' }, { count: totalSelectedItems })
+    const fileImportIntegration = get(bankAccount, ['integrationContext', 'integration', 'id']) === BANK_INTEGRATION_IDS['1CClientBankExchange']
     const reportDeleteEntities = useFlag(PROPERTY_REPORT_DELETE_ENTITIES)
 
     return (
@@ -290,7 +292,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                             )
                             : (
                                 <>
-                                    <Button type='primary'>{UploadFileTitle}</Button>
+                                    <Button type='primary' hidden={!fileImportIntegration}>{UploadFileTitle}</Button>
                                     <Button type='secondary' danger>{RemoveReportTitle}</Button>
                                 </>
                             )
@@ -380,11 +382,10 @@ const PropertyReportPage = (): React.ReactElement => {
 
     const { query: { id } } = useRouter()
 
-    const { loading, obj: property, error } = Property.useObject({
-        where: {
-            id: id as string,
-        },
-    })
+    const { loading, obj: property, error } = Property.useObject(
+        { where: { id: id as string } },
+        { fetchPolicy: 'cache-first' }
+    )
 
     if (error || loading) {
         return <LoadingOrErrorPage

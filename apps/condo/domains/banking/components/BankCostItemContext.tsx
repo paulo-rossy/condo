@@ -15,6 +15,7 @@ import type {
 interface IBankCostItemContext {
     bankCostItems: Array<BankCostItemType>
     bankCostItemGroups: RadioGroupProps['groups']
+    incomeCostItems: Array<BankCostItemType>
     loading: boolean
     selectedItem: BankTransactionType | BankContractorAccountType | null
     setSelectedItem: React.Dispatch<React.SetStateAction<BankTransactionType | BankContractorAccountType>>
@@ -22,7 +23,12 @@ interface IBankCostItemContext {
 export type PropertyReportTypes = 'income' | 'withdrawal' | 'contractor'
 
 const BankCostItemContext = createContext<IBankCostItemContext>({
-    bankCostItems: [], loading: false, bankCostItemGroups: [], selectedItem: null, setSelectedItem: () => null,
+    bankCostItems: [],
+    loading: false,
+    bankCostItemGroups: [],
+    incomeCostItems: [],
+    selectedItem: null,
+    setSelectedItem: () => null,
 })
 
 export const useBankCostItemContext = (): IBankCostItemContext => useContext<IBankCostItemContext>(BankCostItemContext)
@@ -31,6 +37,7 @@ export const BankCostItemProvider: React.FC = ({ children }) => {
     const { objs: bankCostItems, loading } = BankCostItem.useObjects({}, { fetchPolicy: 'cache-first' })
 
     const bankCostItemGroups = useRef<RadioGroupProps['groups']>([])
+    const incomeCostItems = useRef<Array<BankCostItemType>>([])
     const [selectedItem, setSelectedItem] = useState<BankTransactionType | BankContractorAccountType | null>(null)
 
     useEffect(() => {
@@ -46,14 +53,24 @@ export const BankCostItemProvider: React.FC = ({ children }) => {
                     })),
                 })
             })
+
+            incomeCostItems.current = bankCostItems.filter(costItem => !costItem.isOutcome)
         } else {
             bankCostItemGroups.current = []
+            incomeCostItems.current = []
         }
     }, [bankCostItems, loading])
 
     return (
         <BankCostItemContext.Provider
-            value={{ bankCostItems, loading, bankCostItemGroups: bankCostItemGroups.current, selectedItem, setSelectedItem }}
+            value={{
+                bankCostItems,
+                loading,
+                bankCostItemGroups: bankCostItemGroups.current,
+                incomeCostItems: incomeCostItems.current,
+                selectedItem,
+                setSelectedItem,
+            }}
         >
             {children}
         </BankCostItemContext.Provider>

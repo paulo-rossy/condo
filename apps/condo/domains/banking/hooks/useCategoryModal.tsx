@@ -48,8 +48,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     const SumTitle = intl.formatMessage({ id: 'global.sum' })
     const SaveTitle = intl.formatMessage({ id: 'Save' })
 
-    const { loading, bankCostItemGroups, selectedItem, bankCostItems, setSelectedItem } = useBankCostItemContext()
-
+    const { loading, bankCostItemGroups, selectedItem, incomeCostItems, setSelectedItem } = useBankCostItemContext()
     const [open, setOpen] = useState(false)
     const [selectedCostItem, setSelectedCostItem] = useState(null)
 
@@ -168,7 +167,7 @@ export const useCategoryModal: IUseCategoryModal = ({
                             {type === 'income' ? (
                                 <RadioGroup onChange={onGroupChange}>
                                     <Space direction='vertical' size={12}>
-                                        {bankCostItems.filter(item => !item.isOutcome).map(item => (
+                                        {incomeCostItems.map(item => (
                                             <Radio key={item.id} label={item.name} value={item.id} />
                                         ))}
                                     </Space>
@@ -187,7 +186,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     }, [type, open, closeModal, selectedCostItem, loading, handleSave, SaveTitle, ChooseCategoryTitle, onGroupChange,
         bankCostItemGroups, intl, bankTransactions, TransactionTitle, PaymentPurposeTitle, SumTitle, IncomeTitle,
         WithdrawalTitle, TransactionsSelectedTitle, bankContractorAccounts, ContractorTitle, BankAccountTitle,
-        ContractorsSelectedTitle, bankCostItems])
+        ContractorsSelectedTitle, incomeCostItems])
 
     return { categoryModal, setOpen }
 }
