@@ -1,5 +1,6 @@
 import { Row, Col, Tabs, Space, Upload } from 'antd'
 import get from 'lodash/get'
+import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -17,11 +18,12 @@ import { BANK_INTEGRATION_IDS } from '@condo/domains/banking/constants'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
-import { BankAccount } from '@condo/domains/banking/utils/clientSchema'
+import { BankAccount, BankIntegrationContext } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
 import Input from '@condo/domains/common/components/antd/Input'
 import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
-import { PageContent, PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
+import { PageWrapper } from '@condo/domains/common/components/containers/BaseLayout'
+import { TablePageContent } from '@condo/domains/common/components/containers/BaseLayout/BaseLayout'
 import LoadingOrErrorPage from '@condo/domains/common/components/containers/LoadingOrErrorPage'
 import { DeleteButtonWithConfirmModal } from '@condo/domains/common/components/DeleteButtonWithConfirmModal'
 import { BasicEmptyListView } from '@condo/domains/common/components/EmptyListView'
@@ -40,12 +42,13 @@ import type {
     BankAccount as BankAccountType,
     BankTransaction as BankTransactionType,
     BankContractorAccount as BankContractorAccountType,
+    MakeOptional,
 } from '@app/condo/schema'
 import type { RowProps, UploadProps } from 'antd'
 
 const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [24, 20]
-const PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER: RowProps['gutter'] = [0, 40]
 const PROPERTY_REPORT_PAGE_ROW_TABLE_GUTTER: RowProps['gutter'] = [0, 40]
+const EMPTY_ROW_STYLE: React.CSSProperties = { height: 'calc(100% - 90px)' }
 const DATE_DISPLAY_FORMAT = {
     day: 'numeric',
     month: 'numeric',
@@ -53,53 +56,87 @@ const DATE_DISPLAY_FORMAT = {
     hour: 'numeric',
     minute: 'numeric',
 }
+const UPLOAD_OPTIONS: UploadProps = {
+    multiple: false,
+    itemRender: () => null,
+    accept: '.txt',
+}
 const SBBOL_SYNC_CALLBACK_QUERY = 'sbbol-sync-callback'
+const EMPTY_IMAGE_PATH = '/dino/searching@2x.png'
+const PROCESSING_IMAGE_PATH = '/dino/processing@2x.png'
+const INTEGRATION_PROCESSING_STATUS = 'inProgress'
 
+type BankReportProps = {
+    bankAccount: BankAccountType
+    organizationId: string
+}
 interface IPropertyReportPageContent {
     ({ property }: { property: PropertyType }): React.ReactElement
 }
 interface IPropertyImportBankTransactions {
-    (): React.ReactElement
+    ({ bankAccount, organizationId }: MakeOptional<BankReportProps, 'bankAccount'>): React.ReactElement
 }
 interface IPropertyReport {
-    ({ bankAccount, organizationId }: { bankAccount: BankAccountType, organizationId: string }): React.ReactElement
+    ({ bankAccount, organizationId }: BankReportProps): React.ReactElement
 }
 
-const PropertyImportBankTransactions: IPropertyImportBankTransactions = () => {
+const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankAccount, organizationId }) => {
     const intl = useIntl()
     const ImportBankAccountTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.title' })
     const ImportBankAccountDescription = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.description' })
+    const ProcessingTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.processing.title' })
+    const ProcessingDescription = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.processing.description' })
     const LoginBySBBOLTitle = intl.formatMessage({ id: 'LoginBySBBOL' })
     const ImportFileTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.importFileTitle' })
 
-    const { query } = useRouter()
+    const { query, asPath } = useRouter()
     const { id } = query
 
-    const hasSuccessCallback = query.hasOwnProperty(SBBOL_SYNC_CALLBACK_QUERY)
+    // If current property already connected to the BankAccount -> query only it's context.
+    // Otherwise -> query by current organization
+    const { objs: bankIntegrationContexts, loading } = BankIntegrationContext.useObjects({
+        where: get(bankAccount, 'integrationContext.id', false)
+            ? { id: get(bankAccount, 'integrationContext.id') }
+            : { organization: { id: organizationId } },
+    })
 
-    const uploadOptions: UploadProps = {
-        multiple: false,
-        itemRender: () => null,
-        accept: '.txt',
+    const hasSuccessCallback = query.hasOwnProperty(SBBOL_SYNC_CALLBACK_QUERY)
+    let isProcessing = false
+
+    if (!loading) {
+        if (isNull(bankAccount)) {
+            isProcessing = bankIntegrationContexts
+                .every(context => get(context, 'meta.syncTransactionsTaskStatus') === INTEGRATION_PROCESSING_STATUS)
+        } else {
+            isProcessing = get(bankIntegrationContexts, '0.meta.syncTransactionsTaskStatus') === INTEGRATION_PROCESSING_STATUS
+        }
     }
 
     return (
-        <BasicEmptyListView image='/dino/searching@2x.png' spaceSize={20}>
-            <Typography.Title level={3}>{ImportBankAccountTitle}</Typography.Title>
-            <Typography.Paragraph>{ImportBankAccountDescription}</Typography.Paragraph>
-            <DeprecatedButton
-                key='submit'
-                type='sberAction'
-                secondary
-                icon={<SberIconWithoutLabel/>}
-                href='/api/sbbol/auth'
-                block
-            >
-                {LoginBySBBOLTitle}
-            </DeprecatedButton>
-            <Upload {...uploadOptions}>
-                <Button type='secondary' stateless>{ImportFileTitle}</Button>
-            </Upload>
+        <BasicEmptyListView image={isProcessing ? PROCESSING_IMAGE_PATH : EMPTY_IMAGE_PATH} spaceSize={20}>
+            <Typography.Title level={3}>
+                {isProcessing ? ProcessingTitle : ImportBankAccountTitle}
+            </Typography.Title>
+            <Typography.Paragraph>
+                {isProcessing ? ProcessingDescription : ImportBankAccountDescription}
+            </Typography.Paragraph>
+            {!isProcessing && (
+                <>
+                    <DeprecatedButton
+                        key='submit'
+                        type='sberAction'
+                        secondary
+                        icon={<SberIconWithoutLabel/>}
+                        href={`/api/sbbol/auth?redirectUrl=${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`}
+                        block
+                    >
+                        {LoginBySBBOLTitle}
+                    </DeprecatedButton>
+                    <Upload {...UPLOAD_OPTIONS}>
+                        <Button type='secondary' stateless>{ImportFileTitle}</Button>
+                    </Upload>
+                </>
+            )}
             {hasSuccessCallback && (
                 <SbbolImportModal propertyId={id as string} />
             )}
@@ -324,54 +361,67 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
     }
 
     return (
-        <Row gutter={PROPERTY_REPORT_PAGE_ROW_CONTAINER_GUTTER}>
-            <Col span={24}>
-                <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
-                    <Col span={24}>
-                        <Typography.Title>{hasBankAccount ? PageReportTitle : PageImportTitle}</Typography.Title>
+        <>
+            <Row gutter={hasBankAccount ? [0, 40] : 0}>
+                <Col span={24}>
+                    <Row gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
+                        <Col span={24}>
+                            <Typography.Title>{hasBankAccount ? PageReportTitle : PageImportTitle}</Typography.Title>
 
-                    </Col>
-                    <Col span={24}>
-                        <Row justify='space-between' gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
-                            <Col>
-                                <Typography.Text>
-                                    {property.address}
-                                </Typography.Text>
-                                {hasBankAccount && (
-                                    <>
-                                &nbsp;
-                                        <Typography.Text type='secondary'>
-                                            {intl.formatMessage(
-                                                { id: 'pages.condo.property.report.pageReportDescription' },
-                                                { bankAccountNumber: bankAccount.number }
-                                            )}
-                                        </Typography.Text>
-                                        <Typography.Paragraph type='warning'>
-                                            {
-                                                intl.formatMessage(
-                                                    { id: 'pages.condo.property.report.dataUpdatedTitle' },
-                                                    { updatedAt: intl.formatDate(bankAccount.updatedAt, DATE_DISPLAY_FORMAT) }
-                                                )
-                                            }
-                                        </Typography.Paragraph>
-                                    </>
-                                )}
-                            </Col>
-                            {hasBankAccount && (
+                        </Col>
+                        <Col span={24}>
+                            <Row justify='space-between' gutter={PROPERTY_REPORT_PAGE_ROW_GUTTER}>
                                 <Col>
-                                    <BankAccountVisibilitySelect bankAccount={bankAccount} />
+                                    <Typography.Text>
+                                        {property.address}
+                                    </Typography.Text>
+                                    {hasBankAccount && (
+                                        <>
+                                &nbsp;
+                                            <Typography.Text type='secondary'>
+                                                {intl.formatMessage(
+                                                    { id: 'pages.condo.property.report.pageReportDescription' },
+                                                    { bankAccountNumber: bankAccount.number }
+                                                )}
+                                            </Typography.Text>
+                                            <Typography.Paragraph type='warning'>
+                                                {
+                                                    intl.formatMessage(
+                                                        { id: 'pages.condo.property.report.dataUpdatedTitle' },
+                                                        { updatedAt: intl.formatDate(bankAccount.updatedAt, DATE_DISPLAY_FORMAT) }
+                                                    )
+                                                }
+                                            </Typography.Paragraph>
+                                        </>
+                                    )}
                                 </Col>
-                            )}
-                        </Row>
+                                {hasBankAccount && (
+                                    <Col>
+                                        <BankAccountVisibilitySelect bankAccount={bankAccount} />
+                                    </Col>
+                                )}
+                            </Row>
+                        </Col>
+                    </Row>
+                </Col>
+                <Col span={24}>
+                    {hasBankAccount && (
+                        <PropertyReport bankAccount={bankAccount} organizationId={link.organization.id} />
+                    )}
+
+                </Col>
+            </Row>
+            {!hasBankAccount && (
+                <Row align='middle' justify='center' style={EMPTY_ROW_STYLE}>
+                    <Col span={24}>
+                        <PropertyImportBankTransactions
+                            bankAccount={bankAccount}
+                            organizationId={link.organization.id}
+                        />
                     </Col>
                 </Row>
-            </Col>
-            <Col span={24}>
-                {hasBankAccount
-                    ? <PropertyReport bankAccount={bankAccount} organizationId={link.organization.id} />
-                    : <PropertyImportBankTransactions />}
-            </Col>
-        </Row>
+            )}
+        </>
     )
 }
 
@@ -399,16 +449,16 @@ const PropertyReportPage = (): React.ReactElement => {
         <>
             <Head><title>{PageTitle}</title></Head>
             <PageWrapper>
-                <OrganizationRequired>
-                    <BankCostItemProvider>
-                        <PageContent>
-                            <PropertyReportPageContent property={property} />
-                        </PageContent>
-                    </BankCostItemProvider>
-                </OrganizationRequired>
+                <BankCostItemProvider>
+                    <TablePageContent>
+                        <PropertyReportPageContent property={property} />
+                    </TablePageContent>
+                </BankCostItemProvider>
             </PageWrapper>
         </>
     )
 }
+
+PropertyReportPage.requiredAccess = OrganizationRequired
 
 export default PropertyReportPage

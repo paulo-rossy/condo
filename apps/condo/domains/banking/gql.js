@@ -20,13 +20,13 @@ const BankCostItem = generateGqlQueries('BankCostItem', BANK_COST_ITEM_FIELDS)
 const BANK_INTEGRATION_FIELDS = `{ name ${COMMON_FIELDS} }`
 const BankIntegration = generateGqlQueries('BankIntegration', BANK_INTEGRATION_FIELDS)
 
-const BANK_ACCOUNT_FIELDS = `{ organization { id } integrationContext { id enabled integration ${BANK_INTEGRATION_FIELDS} } tin country routingNumber number currencyCode propertyBalance approvedAt approvedBy { id name } importId territoryCode bankName meta reportVisible hasData ${COMMON_FIELDS} }`
+const BANK_ACCOUNT_FIELDS = `{ organization { id } integrationContext { id enabled integration ${BANK_INTEGRATION_FIELDS} } tin country routingNumber number currencyCode property { id } propertyBalance approvedAt approvedBy { id name } importId territoryCode bankName meta reportVisible hasData ${COMMON_FIELDS} }`
 const BankAccount = generateGqlQueries('BankAccount', BANK_ACCOUNT_FIELDS)
 
 const BANK_CONTRACTOR_ACCOUNT_FIELDS = `{ name organization { id } costItem { id category { id name } } tin country routingNumber number currencyCode importId territoryCode bankName meta ${COMMON_FIELDS} }`
 const BankContractorAccount = generateGqlQueries('BankContractorAccount', BANK_CONTRACTOR_ACCOUNT_FIELDS)
 
-const BANK_INTEGRATION_ACCOUNT_CONTEXT_FIELDS = `{ integration { id } organization { id } enabled ${COMMON_FIELDS} }`
+const BANK_INTEGRATION_ACCOUNT_CONTEXT_FIELDS = `{ integration { id } organization { id } enabled meta ${COMMON_FIELDS} }`
 const BankIntegrationAccountContext = generateGqlQueries('BankIntegrationAccountContext', BANK_INTEGRATION_ACCOUNT_CONTEXT_FIELDS)
 
 const BANK_TRANSACTION_FIELDS = `{ account { id } contractorAccount { id } costItem { id } integrationContext { id enabled } organization { id } number date amount isOutcome currencyCode purpose meta importId importRemoteSystem ${COMMON_FIELDS} }`

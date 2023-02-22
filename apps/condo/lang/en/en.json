@@ -532,6 +532,8 @@
   "pages.condo.property.report.importBankTransaction.title": "How to setup a report",
   "pages.condo.property.report.importBankTransaction.description": "There are two ways to do this. First is upload file from «1С». Second is authorize with SBBOL and setup automatic integration.",
   "pages.condo.property.report.importBankTransaction.importFileTitle": "Choose 1C file",
+  "pages.condo.property.report.importBankTransaction.processing.title": "Processing files",
+  "pages.condo.property.report.importBankTransaction.processing.description": "Report will appear as soon as the files are uploaded",
   "pages.condo.property.report.visibility.visible": "Residents can see the report",
   "pages.condo.property.report.visibility.hidden": "Residents don't see the report",
   "pages.condo.property.report.visibility.visible.description": "Now residents of this property can see the report in Doma app",

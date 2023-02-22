@@ -532,6 +532,8 @@
   "pages.condo.property.report.importBankTransaction.title": "Как настроить отчет",
   "pages.condo.property.report.importBankTransaction.description": "Есть два способа сделать это. Первый — загрузить файл из «1С». Второй — авторизоваться через Сбербанк Бизнес Онлайн (СББОЛ) и настроить автоматическую интеграцию.",
   "pages.condo.property.report.importBankTransaction.importFileTitle": "Выбрать файл 1С",
+  "pages.condo.property.report.importBankTransaction.processing.title": "Обрабатываем файлы",
+  "pages.condo.property.report.importBankTransaction.processing.description": "Отчет появится, как только система загрузит файлы",
   "pages.condo.property.report.visibility.visible": "Жители видят отчет",
   "pages.condo.property.report.visibility.hidden": "Жители не видят отчет",
   "pages.condo.property.report.visibility.visible.description": "Теперь жители этого дома видят отчет в приложении Doma",

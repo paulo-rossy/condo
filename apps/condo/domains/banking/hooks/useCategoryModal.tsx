@@ -70,37 +70,22 @@ export const useCategoryModal: IUseCategoryModal = ({
 
     const handleSave = useCallback(async () => {
         const sender = getClientSideSenderInfo()
-        if (type === 'contractor') {
-            await updateSelected({
-                variables: {
-                    data: bankContractorAccounts.map(contractor => {
-                        return {
-                            id: contractor.id,
-                            data: {
-                                dv: 1,
-                                sender,
-                                costItem: { connect: { id: selectedCostItem } },
-                            },
-                        }
-                    }),
-                },
-            })
-        } else if (type === 'income' || type === 'withdrawal') {
-            await updateSelected({
-                variables: {
-                    data: bankTransactions.map(transaction => {
-                        return {
-                            id: transaction.id,
-                            data: {
-                                dv: 1,
-                                sender,
-                                costItem: { connect: { id: selectedCostItem } },
-                            },
-                        }
-                    }),
-                },
-            })
-        }
+        const updatePayload = type === 'contractor' ? bankContractorAccounts : bankTransactions
+
+        await updateSelected({
+            variables: {
+                data: updatePayload.map(updateItem => {
+                    return {
+                        id: updateItem.id,
+                        data: {
+                            dv: 1,
+                            sender,
+                            costItem: { connect: { id: selectedCostItem } },
+                        },
+                    }
+                }),
+            },
+        })
 
         setOpen(false)
         setSelectedCostItem(null)

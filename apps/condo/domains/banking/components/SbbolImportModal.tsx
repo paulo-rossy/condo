@@ -3,6 +3,7 @@ import { jsx } from '@emotion/react'
 import styled from '@emotion/styled'
 import { Row, Col, Form } from 'antd'
 import get from 'lodash/get'
+import { useRouter } from 'next/router'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
@@ -42,7 +43,7 @@ const validateFormItems = (items: Array<{ property?: string, bankAccount?: strin
     return allValuesSet && allValuesUnique
 }
 
-const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
+export const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
     const intl = useIntl()
     const SetupSyncTitle = intl.formatMessage({ id: 'pages.banking.report.accountSetupTitle' })
     const BankAccountNotFoundTitle = intl.formatMessage({ id: 'pages.banking.report.accountNotFound' })
@@ -55,6 +56,7 @@ const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
     const AddTitle = intl.formatMessage({ id: 'pages.banking.report.addAnotherBankAccount' })
     const CancelTitle = intl.formatMessage({ id: 'Cancel' })
 
+    const { replace, asPath } = useRouter()
     const { organization } = useOrganization()
     const { objs: bankAccounts, loading: bankAccountsLoading } = BankAccount.useObjects({
         where: {
@@ -65,9 +67,7 @@ const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
     const { objs: properties, loading: propertiesLoading } = Property.useObjects({
         where: { organization: { id: get(organization, 'id') } },
     })
-    const [updateBankAccounts, { loading: updateActionLoading }] = useMutation(BankAccountGQL.UPDATE_OBJS_MUTATION, {
-        onCompleted: () => setIsOpen(false),
-    })
+    const [updateBankAccounts, { loading: updateActionLoading }] = useMutation(BankAccountGQL.UPDATE_OBJS_MUTATION)
     const { requiredValidator } = useValidations()
     const [form] = Form.useForm()
     const formWatch = Form.useWatch('items', form)
@@ -96,6 +96,10 @@ const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
     const handleRemove = useCallback((remove) => {
         remove(formWatch.length - 1)
     }, [formWatch])
+    const handleClose = useCallback(async () => {
+        await replace(asPath.split('?')[0])
+        setIsOpen(false)
+    }, [asPath, replace])
     const handleSubmit = useCallback(async () => {
         if (formWatch && isValid) {
             const sender = getClientSideSenderInfo()
@@ -112,8 +116,9 @@ const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
                     })),
                 },
             })
+            await handleClose()
         }
-    }, [formWatch, isValid, updateBankAccounts])
+    }, [formWatch, isValid, updateBankAccounts, handleClose])
     const uniqueItemValidator = useCallback((itemKey: string, index: number) => ({
         message: NotUniqueError,
         validator: (_, value) => {
@@ -150,7 +155,7 @@ const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
         <Modal
             title={hasBankAccounts ? SetupSyncTitle : BankAccountNotFoundTitle}
             open={isOpen}
-            onCancel={() => setIsOpen(false)}
+            onCancel={handleClose}
             footer={modalFooter}
         >
             <Row gutter={MODAL_ROW_GUTTER}>
@@ -246,5 +251,3 @@ const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
         </Modal>
     )
 }
-
-export { SbbolImportModal }

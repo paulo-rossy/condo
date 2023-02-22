@@ -112,10 +112,10 @@ const sync = async ({ keystone, userInfo, tokenSet, features  }) => {
     await syncServiceSubscriptions(userInfo.inn)
     await syncFeatures({ context, organization, features })
 
-    if (await featureToggleManager.isFeatureEnabled(adminContext, SYNC_BANK_ACCOUNTS_FROM_SBBOL)) {
-        await syncBankAccounts(user.id, organization)
-        await syncSbbolTransactions.delay(date, user.id, organization)
-    }
+    // if (await featureToggleManager.isFeatureEnabled(adminContext, SYNC_BANK_ACCOUNTS_FROM_SBBOL)) {
+    await syncBankAccounts(user.id, organization)
+    await syncSbbolTransactions.delay(date, user.id, organization)
+    // }
 
     return {
         user,
