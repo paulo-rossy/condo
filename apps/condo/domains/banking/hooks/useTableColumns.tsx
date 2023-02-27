@@ -18,16 +18,22 @@ import { parseQuery } from '@condo/domains/common/utils/tables.utils'
 import type { RenderReturnType } from '@condo/domains/common/components/Table/Renders'
 import type { FilterValue } from 'antd/lib/table/interface'
 
-const renderCategory = (search: FilterValue | string, nullReplace: string) => {
+const renderCategory = (intl, search: FilterValue | string, nullReplace: string) => {
     return function render (text: string, data): RenderReturnType {
-        const value = isNull(text) ? nullReplace : text
-        const costItemCategory = get(data, ['costItem', 'category', 'name'])
+        let costItem = nullReplace
+        let costItemCategory = null
+
+        if (!isNull(text)) {
+            costItem = intl.formatMessage({ id: `banking.costItem.${text}.name` })
+            costItemCategory = intl.formatMessage({ id: `banking.category.${get(data, 'costItem.category.name')}.name` })
+        }
 
         const postfix = isNull(text) ? null : (
             <Typography.Text size='medium' type='secondary'>({costItemCategory})</Typography.Text>
         )
+        const tooltip = isNull(text) ? null : `${costItem} (${costItemCategory})`
 
-        return getTableCellRenderer(search, true, postfix, null)(value)
+        return getTableCellRenderer(search, true, postfix, null, null, tooltip)(costItem)
     }
 }
 
@@ -90,7 +96,7 @@ export function useTableColumns () {
                 title: CategoryTitle,
                 key: 'category',
                 width: '14%',
-                render: renderCategory(search, CategoryNotSetTitle),
+                render: renderCategory(intl, search, CategoryNotSetTitle),
                 dataIndex: ['costItem', 'name'],
             },
             {
@@ -128,7 +134,7 @@ export function useTableColumns () {
                 dataIndex: ['costItem', 'name'],
                 key: 'category',
                 width: '35%',
-                render: renderCategory(search, CategoryNotSetTitle),
+                render: renderCategory(intl, search, CategoryNotSetTitle),
             },
         ],
     ], [search, ContractorTitle, TinTitle, BankAccountTitle, CategoryTitle, NumberTitle, CategoryNotSetTitle, intl,

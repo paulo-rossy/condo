@@ -2,6 +2,7 @@ import get from 'lodash/get'
 import groupBy from 'lodash/groupBy'
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 
+import { useIntl } from '@open-condo/next/intl'
 import type { RadioGroupProps } from '@open-condo/ui'
 
 import { BankCostItem } from '@condo/domains/banking/utils/clientSchema'
@@ -34,6 +35,7 @@ const BankCostItemContext = createContext<IBankCostItemContext>({
 export const useBankCostItemContext = (): IBankCostItemContext => useContext<IBankCostItemContext>(BankCostItemContext)
 
 export const BankCostItemProvider: React.FC = ({ children }) => {
+    const intl = useIntl()
     const { objs: bankCostItems, loading } = BankCostItem.useObjects({}, { fetchPolicy: 'cache-first' })
 
     const bankCostItemGroups = useRef<RadioGroupProps['groups']>([])
@@ -42,24 +44,26 @@ export const BankCostItemProvider: React.FC = ({ children }) => {
 
     useEffect(() => {
         if (!loading) {
+            bankCostItemGroups.current = []
+            incomeCostItems.current = []
+
             const categoryObject = groupBy(bankCostItems.filter(costItem => costItem.isOutcome), (costItem) => costItem.category.id)
 
             Object.values(categoryObject).forEach(costItems => {
                 bankCostItemGroups.current.push({
-                    name: get(costItems, ['0', 'category', 'name']),
+                    name: intl.formatMessage({ id: `banking.category.${get(costItems, ['0', 'category', 'name'])}.name` }),
                     options: costItems.map(costItem => ({
-                        label: costItem.name,
+                        label: intl.formatMessage({ id: `banking.costItem.${costItem.name}.name` }),
                         value: costItem.id,
                     })),
                 })
             })
 
-            incomeCostItems.current = bankCostItems.filter(costItem => !costItem.isOutcome)
-        } else {
-            bankCostItemGroups.current = []
-            incomeCostItems.current = []
+            incomeCostItems.current = bankCostItems
+                .filter(costItem => !costItem.isOutcome)
+                .map(costItem => ({ ...costItem, name: `banking.costItem.${costItem.name}.name` }))
         }
-    }, [bankCostItems, loading])
+    }, [bankCostItems, loading, intl])
 
     return (
         <BankCostItemContext.Provider
