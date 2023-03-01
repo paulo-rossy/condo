@@ -1,7 +1,7 @@
 /** @jsx jsx */
 import { jsx } from '@emotion/react'
 import styled from '@emotion/styled'
-import { Row, Col, Form } from 'antd'
+import { Row, Col, Form, Skeleton } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
@@ -31,7 +31,7 @@ const TextButton = styled.div`
 `
 
 interface ISbbolImportModal {
-    ({ propertyId }: { propertyId: string }): React.ReactElement
+    ({ propertyId, onComplete }: { propertyId: string, onComplete?: () => void }): React.ReactElement
 }
 
 const validateFormItems = (items: Array<{ property?: string, bankAccount?: string }>) => {
@@ -43,7 +43,7 @@ const validateFormItems = (items: Array<{ property?: string, bankAccount?: strin
     return allValuesSet && allValuesUnique
 }
 
-export const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
+export const SbbolImportModal: ISbbolImportModal = ({ propertyId, onComplete }) => {
     const intl = useIntl()
     const SetupSyncTitle = intl.formatMessage({ id: 'pages.banking.report.accountSetupTitle' })
     const BankAccountNotFoundTitle = intl.formatMessage({ id: 'pages.banking.report.accountNotFound' })
@@ -66,7 +66,7 @@ export const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
     })
     const { objs: properties, loading: propertiesLoading } = Property.useObjects({
         where: { organization: { id: get(organization, 'id') } },
-    })
+    }, { fetchPolicy: 'cache-first' })
     const [updateBankAccounts, { loading: updateActionLoading }] = useMutation(BankAccountGQL.UPDATE_OBJS_MUTATION)
     const { requiredValidator } = useValidations()
     const [form] = Form.useForm()
@@ -116,9 +116,13 @@ export const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
                     })),
                 },
             })
+
+            if (onComplete) {
+                onComplete()
+            }
             await handleClose()
         }
-    }, [formWatch, isValid, updateBankAccounts, handleClose])
+    }, [formWatch, isValid, updateBankAccounts, handleClose, onComplete])
     const uniqueItemValidator = useCallback((itemKey: string, index: number) => ({
         message: NotUniqueError,
         validator: (_, value) => {
@@ -150,6 +154,22 @@ export const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
             </Button>
         )
     }, [hasBankAccounts, isValid, updateActionLoading, SaveTitle, handleSubmit])
+    const bankAccountSelectOptions = useMemo(() => {
+        return bankAccounts.map(bankAccount => (
+            <Option key={bankAccount.id} value={bankAccount.id}>
+                {bankAccount.number}
+            </Option>
+        ))
+    }, [bankAccounts])
+    const propertySelectOptions = useMemo(() => {
+        return properties.map(property => (
+            <Option key={property.id} value={property.id}>
+                {property.address}
+            </Option>
+        ))
+    }, [properties])
+
+    const isLoading = bankAccountsLoading || propertiesLoading
 
     return (
         <Modal
@@ -162,91 +182,89 @@ export const SbbolImportModal: ISbbolImportModal = ({ propertyId }) => {
                 <Col span={24}>
                     <Alert type='info' message={AlertMessage} description={AlertDescription} showIcon />
                 </Col>
-                <Col span={24} hidden={!hasBankAccounts}>
-                    <Typography.Text>
-                        {intl.formatMessage(
-                            { id: 'pages.banking.report.importHelpText' }, { isSingular: bankAccounts.length })
-                        }
-                    </Typography.Text>
-                </Col>
-                <Col span={24} hidden={!hasBankAccounts}>
-                    <Form
-                        form={form}
-                        initialValues={{ items: [{ property: null, bankAccount: null }] }}
-                    >
-                        <Form.List name='items'>
-                            {(fields, { add, remove }) => (
-                                <Row gutter={MODAL_ROW_GUTTER}>
-                                    {fields.map(({ key, name, ...restField }, index) => (
-                                        <>
-                                            <Col span={14}>
-                                                <Form.Item
-                                                    {...restField}
-                                                    name={[name, 'property']}
-                                                    rules={[
-                                                        requiredValidator,
-                                                        uniqueItemValidator('property', index),
-                                                    ]}
+                {isLoading
+                    ? <Skeleton active loading round paragraph={{ rows: 5 }} />
+                    : (
+                        <>
+                            <Col span={24} hidden={!hasBankAccounts}>
+                                <Typography.Text>
+                                    {intl.formatMessage(
+                                        { id: 'pages.banking.report.importHelpText' }, { isSingular: bankAccounts.length })
+                                    }
+                                </Typography.Text>
+                            </Col>
+                            <Col span={24} hidden={!hasBankAccounts}>
+                                <Form
+                                    form={form}
+                                    initialValues={{ items: [{ property: null, bankAccount: null }] }}
+                                >
+                                    <Form.List name='items'>
+                                        {(fields, { add, remove }) => (
+                                            <Row gutter={MODAL_ROW_GUTTER}>
+                                                {fields.map(({ key, name, ...restField }, index) => (
+                                                    <>
+                                                        <Col span={14}>
+                                                            <Form.Item
+                                                                {...restField}
+                                                                name={[name, 'property']}
+                                                                rules={[
+                                                                    requiredValidator,
+                                                                    uniqueItemValidator('property', index),
+                                                                ]}
+                                                            >
+                                                                <Select
+                                                                    placeholder={PropertyPlaceholder}
+                                                                    disabled={bankAccounts.length === 1 || index === 0}
+                                                                >
+                                                                    {propertySelectOptions}
+                                                                </Select>
+                                                            </Form.Item>
+                                                        </Col>
+                                                        <Col span={10}>
+                                                            <Form.Item
+                                                                {...restField}
+                                                                name={[name, 'bankAccount']}
+                                                                rules={[
+                                                                    uniqueItemValidator('bankAccount', index),
+                                                                ]}
+                                                            >
+                                                                <Select
+                                                                    placeholder={BankAccountPlaceholder}
+                                                                    disabled={bankAccounts.length === 1}
+                                                                >
+                                                                    {bankAccountSelectOptions}
+                                                                </Select>
+                                                            </Form.Item>
+                                                        </Col>
+                                                    </>
+                                                ))}
+                                                <Col
+                                                    span={24}
+                                                    hidden={bankAccounts.length === 1 || properties.length === 1}
                                                 >
-                                                    <Select
-                                                        placeholder={PropertyPlaceholder}
-                                                        disabled={bankAccounts.length === 1 || index === 0}
-                                                    >
-                                                        {properties.map(property => (
-                                                            <Option key={property.id} value={property.id}>
-                                                                {property.address}
-                                                            </Option>
-                                                        ))}
-                                                    </Select>
-                                                </Form.Item>
-                                            </Col>
-                                            <Col span={10}>
-                                                <Form.Item
-                                                    {...restField}
-                                                    name={[name, 'bankAccount']}
-                                                    rules={[
-                                                        requiredValidator,
-                                                        uniqueItemValidator('bankAccount', index),
-                                                    ]}
-                                                >
-                                                    <Select
-                                                        placeholder={BankAccountPlaceholder}
-                                                        disabled={bankAccounts.length === 1}
-                                                    >
-                                                        {bankAccounts.map(bankAccount => (
-                                                            <Option key={bankAccount.id} value={bankAccount.id}>
-                                                                {bankAccount.number}
-                                                            </Option>
-                                                        ))}
-                                                    </Select>
-                                                </Form.Item>
-                                            </Col>
-                                        </>
-                                    ))}
-                                    <Col
-                                        span={24}
-                                        hidden={bankAccounts.length === 1 || properties.length === 1}
-                                    >
-                                        <Space size={40} direction='vertical'>
-                                            {formValues.length !== 1 && (
-                                                <TextButton onClick={() => handleRemove(remove)}>
-                                                    <XCircle size='small' />
-                                                    <Typography.Title level={5}>{CancelTitle}</Typography.Title>
-                                                </TextButton>
-                                            )}
-                                            {formValues.length < bankAccounts.length && (
-                                                <TextButton onClick={add}>
-                                                    <PlusCircle size='small' />
-                                                    <Typography.Title level={5}>{AddTitle}</Typography.Title>
-                                                </TextButton>
-                                            )}
-                                        </Space>
-                                    </Col>
-                                </Row>
-                            )}
-                        </Form.List>
-                    </Form>
-                </Col>
+                                                    <Space size={40} direction='vertical'>
+                                                        {formValues.length !== 1 && (
+                                                            <TextButton onClick={() => handleRemove(remove)}>
+                                                                <XCircle size='small' />
+                                                                <Typography.Title level={5}>{CancelTitle}</Typography.Title>
+                                                            </TextButton>
+                                                        )}
+                                                        {formValues.length < bankAccounts.length && (
+                                                            <TextButton onClick={add}>
+                                                                <PlusCircle size='small' />
+                                                                <Typography.Title level={5}>{AddTitle}</Typography.Title>
+                                                            </TextButton>
+                                                        )}
+                                                    </Space>
+                                                </Col>
+                                            </Row>
+                                        )}
+                                    </Form.List>
+                                </Form>
+                            </Col>
+                        </>
+                    )
+                }
             </Row>
         </Modal>
     )

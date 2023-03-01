@@ -1,9 +1,9 @@
-import { Row, Col, Tabs, Space, Upload } from 'antd'
+import { Row, Col, Tabs, Space, Upload, notification } from 'antd'
 import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { useFeatureFlags } from '@open-condo/featureflags/FeatureFlagsContext'
@@ -42,6 +42,7 @@ import type {
     BankAccount as BankAccountType,
     BankTransaction as BankTransactionType,
     BankContractorAccount as BankContractorAccountType,
+    BankIntegrationContext as BankIntegrationContextType,
     MakeOptional,
 } from '@app/condo/schema'
 import type { RowProps, UploadProps } from 'antd'
@@ -64,81 +65,133 @@ const UPLOAD_OPTIONS: UploadProps = {
 const SBBOL_SYNC_CALLBACK_QUERY = 'sbbol-sync-callback'
 const EMPTY_IMAGE_PATH = '/dino/searching@2x.png'
 const PROCESSING_IMAGE_PATH = '/dino/processing@2x.png'
-const INTEGRATION_PROCESSING_STATUS = 'inProgress'
+const BANK_INTEGRATION_CONTEXT_POLL_INTERVAL = 10000
 
-type BankReportProps = {
+type BaseBankReportProps = {
     bankAccount: BankAccountType
     organizationId: string
+}
+type PropertyImportBankTransactionProps = MakeOptional<BaseBankReportProps, 'bankAccount'> & {
+    refetchBankAccount: () => void
 }
 interface IPropertyReportPageContent {
     ({ property }: { property: PropertyType }): React.ReactElement
 }
 interface IPropertyImportBankTransactions {
-    ({ bankAccount, organizationId }: MakeOptional<BankReportProps, 'bankAccount'>): React.ReactElement
+    ({ bankAccount, organizationId, refetchBankAccount }: PropertyImportBankTransactionProps): React.ReactElement
 }
 interface IPropertyReport {
-    ({ bankAccount, organizationId }: BankReportProps): React.ReactElement
+    ({ bankAccount, organizationId }: BaseBankReportProps): React.ReactElement
 }
 
-const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankAccount, organizationId }) => {
+// This statuses will use only at MVP version of the app
+enum IntegrationContextStatus {
+    'InProgress' = 'inProgress',
+    'Completed' = 'completed',
+    'Failed' = 'failed',
+}
+
+/**
+ * Collect total BankIntegrationContext sync status from meta field
+ * @deprecated
+ */
+function getIntegrationsSyncStatus (integrationContexts: Array<BankIntegrationContextType>, status: IntegrationContextStatus) {
+    return integrationContexts.some(context => get(context, 'meta.syncTransactionsTaskStatus') === status)
+}
+
+const PropertyImportBankTransactions: IPropertyImportBankTransactions = (props) => {
     const intl = useIntl()
     const ImportBankAccountTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.title' })
     const ImportBankAccountDescription = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.description' })
     const ProcessingTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.processing.title' })
     const ProcessingDescription = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.processing.description' })
     const LoginBySBBOLTitle = intl.formatMessage({ id: 'LoginBySBBOL' })
+    const ImportSBBOLTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.importSbbolTitle' })
     const ImportFileTitle = intl.formatMessage({ id: 'pages.condo.property.report.importBankTransaction.importFileTitle' })
+    const SyncSuccessTitle = intl.formatMessage({ id: 'pages.banking.report.syncSuccess.title' })
 
-    const { query, asPath } = useRouter()
+    const { query, asPath, push } = useRouter()
     const { id } = query
+    const [isCompleted, setIsCompleted] = useState(false)
+    const isProcessing = useRef(false)
+
+    const { bankAccount, organizationId, refetchBankAccount } = props
 
     // If current property already connected to the BankAccount -> query only it's context.
     // Otherwise -> query by current organization
-    const { objs: bankIntegrationContexts, loading } = BankIntegrationContext.useObjects({
+    // Not null bankAccount prop means that current property already had a report without imported transactions
+    const { objs: bankIntegrationContexts, loading, stopPolling } = BankIntegrationContext.useObjects({
         where: get(bankAccount, 'integrationContext.id', false)
             ? { id: get(bankAccount, 'integrationContext.id') }
             : { organization: { id: organizationId } },
-    })
+    }, { pollInterval: BANK_INTEGRATION_CONTEXT_POLL_INTERVAL })
 
-    const hasSuccessCallback = query.hasOwnProperty(SBBOL_SYNC_CALLBACK_QUERY)
-    let isProcessing = false
+    // Fetch transactions sync status. If it not equals to processing -> stop poll results
+    useEffect(() => {
+        if (!loading) {
+            isProcessing.current = getIntegrationsSyncStatus(bankIntegrationContexts, IntegrationContextStatus.InProgress)
 
-    if (!loading) {
-        if (isNull(bankAccount)) {
-            isProcessing = bankIntegrationContexts
-                .every(context => get(context, 'meta.syncTransactionsTaskStatus') === INTEGRATION_PROCESSING_STATUS)
-        } else {
-            isProcessing = get(bankIntegrationContexts, '0.meta.syncTransactionsTaskStatus') === INTEGRATION_PROCESSING_STATUS
+            if (!isProcessing.current) {
+                stopPolling()
+                setIsCompleted(getIntegrationsSyncStatus(bankIntegrationContexts, IntegrationContextStatus.Completed))
+            }
         }
+    }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl])
+
+    const handleOpenSbbolModal = useCallback(async () => {
+        await push(`${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`)
+    }, [asPath, push])
+
+    if (loading) {
+        return <Loader fill size='large' />
     }
 
+    const hasSuccessCallback = query.hasOwnProperty(SBBOL_SYNC_CALLBACK_QUERY)
+    const hasSyncedData = isNull(bankAccount) && isCompleted
+
     return (
-        <BasicEmptyListView image={isProcessing ? PROCESSING_IMAGE_PATH : EMPTY_IMAGE_PATH} spaceSize={20}>
+        <BasicEmptyListView image={isProcessing.current ? PROCESSING_IMAGE_PATH : EMPTY_IMAGE_PATH} spaceSize={20}>
             <Typography.Title level={3}>
-                {isProcessing ? ProcessingTitle : ImportBankAccountTitle}
+                {isProcessing.current ? ProcessingTitle : ImportBankAccountTitle}
             </Typography.Title>
             <Typography.Paragraph>
-                {isProcessing ? ProcessingDescription : ImportBankAccountDescription}
+                {isProcessing.current ? ProcessingDescription : ImportBankAccountDescription}
             </Typography.Paragraph>
-            {!isProcessing && (
+            {!isProcessing.current && (
                 <>
-                    <DeprecatedButton
-                        key='submit'
-                        type='sberAction'
-                        secondary
-                        icon={<SberIconWithoutLabel/>}
-                        href={`/api/sbbol/auth?redirectUrl=${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`}
-                        block
-                    >
-                        {LoginBySBBOLTitle}
-                    </DeprecatedButton>
-                    <Upload {...UPLOAD_OPTIONS}>
-                        <Button type='secondary' stateless>{ImportFileTitle}</Button>
+                    {hasSyncedData
+                        ? (
+                            <DeprecatedButton
+                                key='submit'
+                                type='sberAction'
+                                secondary
+                                icon={<SberIconWithoutLabel/>}
+                                onClick={handleOpenSbbolModal}
+                                block
+                            >
+                                {ImportSBBOLTitle}
+                            </DeprecatedButton>
+                        )
+                        : (
+                            <DeprecatedButton
+                                key='submit'
+                                type='sberAction'
+                                secondary
+                                icon={<SberIconWithoutLabel/>}
+                                href={`/api/sbbol/auth?redirectUrl=${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`}
+                                block
+                            >
+                                {LoginBySBBOLTitle}
+                            </DeprecatedButton>
+                        )
+                    }
+                    <Upload {...UPLOAD_OPTIONS} disabled={hasSyncedData}>
+                        <Button type='secondary' stateless disabled={hasSyncedData}>{ImportFileTitle}</Button>
                     </Upload>
                 </>
             )}
             {hasSuccessCallback && (
-                <SbbolImportModal propertyId={id as string} />
+                <SbbolImportModal propertyId={id as string} onComplete={refetchBankAccount} />
             )}
         </BasicEmptyListView>
     )
@@ -347,16 +400,17 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
     const PageReportTitle = intl.formatMessage({ id: 'pages.condo.property.report.pageReportTitle' })
 
     const { link } = useOrganization()
-    const { loading, obj: bankAccount } = BankAccount.useObject({
+    const { loading, obj: bankAccount, refetch } = BankAccount.useObject({
         where: {
             property: { id: property.id },
             organization: { id: link.organization.id },
         },
     })
 
-    const hasBankAccount = !loading && get(bankAccount, 'hasData', false)
+    const isBankAccountLoading = isNull(bankAccount) && loading
+    const hasBankAccount = !isBankAccountLoading && get(bankAccount, 'hasData', false)
 
-    if (loading) {
+    if (isBankAccountLoading) {
         return (<Loader fill />)
     }
 
@@ -404,12 +458,11 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                         </Col>
                     </Row>
                 </Col>
-                <Col span={24}>
-                    {hasBankAccount && (
+                {hasBankAccount && (
+                    <Col span={24}>
                         <PropertyReport bankAccount={bankAccount} organizationId={link.organization.id} />
-                    )}
-
-                </Col>
+                    </Col>
+                )}
             </Row>
             {!hasBankAccount && (
                 <Row align='middle' justify='center' style={EMPTY_ROW_STYLE}>
@@ -417,6 +470,7 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                         <PropertyImportBankTransactions
                             bankAccount={bankAccount}
                             organizationId={link.organization.id}
+                            refetchBankAccount={refetch}
                         />
                     </Col>
                 </Row>
