@@ -906,7 +906,6 @@
   "pages.banking.removeModal.transaction.title": "Удалить {count, plural, one {транзакцию} other {транзакции}}?",
   "pages.banking.removeModal.transaction.description": "Восстановить {count, plural, one {ее} other {данные}} будет невозможно",
   "pages.banking.uploadTransactionsFile": "Upload file with transactions",
-  "pages.banking.removeReport": "Remove report",
   "pages.banking.categoryNotSet": "Category not set",
   "pages.banking.table.notSet": "Не определена",
   "pages.banking.chooseCategory": "Choose category",

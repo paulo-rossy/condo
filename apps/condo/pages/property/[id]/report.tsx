@@ -1,4 +1,4 @@
-import { Row, Col, Tabs, Space, Upload, notification } from 'antd'
+import { Row, Col, Tabs, Space, Upload } from 'antd'
 import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
@@ -205,7 +205,6 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
     const SearchPlaceholderTitle = intl.formatMessage({ id: 'filters.FullSearch' })
     const CategoryCheckboxTitle = intl.formatMessage({ id: 'pages.banking.categoryNotSet' })
     const UploadFileTitle = intl.formatMessage({ id: 'pages.banking.uploadTransactionsFile' })
-    const RemoveReportTitle = intl.formatMessage({ id: 'pages.banking.removeReport' })
     const EditTitle = intl.formatMessage({ id: 'Edit' })
     const CancelSelectionTitle = intl.formatMessage({ id: 'pages.condo.ticket.index.CancelSelectedTicket' })
     const DeleteTitle = intl.formatMessage({ id: 'Delete' })
@@ -349,7 +348,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                     {categoryModal}
                 </Col>
             </Row>
-            <ActionBar>
+            <ActionBar hidden={!totalSelectedItems && !fileImportIntegration}>
                 <Space size={12}>
                     {
                         totalSelectedItems
@@ -380,12 +379,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
                                     </Button>
                                 </>
                             )
-                            : (
-                                <>
-                                    <Button type='primary' hidden={!fileImportIntegration}>{UploadFileTitle}</Button>
-                                    <Button type='secondary' danger>{RemoveReportTitle}</Button>
-                                </>
-                            )
+                            : <Button type='primary' hidden={!fileImportIntegration}>{UploadFileTitle}</Button>
                     }
 
                 </Space>

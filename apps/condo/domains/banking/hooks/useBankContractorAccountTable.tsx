@@ -1,3 +1,4 @@
+import { SortBankContractorAccountsBy } from '@app/condo/schema'
 import { Col, Row } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
@@ -7,10 +8,11 @@ import { useMutation } from '@open-condo/next/apollo'
 
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
+import { BANKING_TABLE_PAGE_SIZE } from '@condo/domains/banking/constants'
 import { BankContractorAccount as BankContractorAccountGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
-import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table/Index'
+import { Table } from '@condo/domains/common/components/Table/Index'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
 import { BaseMutationArgs } from './useBankTransactionsTable'
@@ -20,6 +22,7 @@ import type {
     MutationUpdateBankContractorAccountsArgs,
 } from '@app/condo/schema'
 import type { RowProps } from 'antd'
+import type { TableRowSelection } from 'antd/lib/table/interface'
 
 const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
 
@@ -41,17 +44,18 @@ interface IUseBankContractorAccountTable {
 const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organizationId, categoryNotSet }) => {
     const router = useRouter()
     const { offset } = parseQuery(router.query)
-    const pageIndex = getPageIndexFromOffset(offset, DEFAULT_PAGE_SIZE)
+    const pageIndex = getPageIndexFromOffset(offset, BANKING_TABLE_PAGE_SIZE)
     const nullCategoryFilter = categoryNotSet ? { costItem_is_null: true } : {}
 
-    const { objs: bankContractorAccounts, loading, refetch } = BankContractorAccount.useObjects({
+    const { objs: bankContractorAccounts, loading, refetch, count: totalRows } = BankContractorAccount.useObjects({
         where: {
             organization: { id: organizationId },
             ...nullCategoryFilter,
         },
-        first: DEFAULT_PAGE_SIZE,
-        skip: (pageIndex - 1) * DEFAULT_PAGE_SIZE,
-    })
+        first: BANKING_TABLE_PAGE_SIZE,
+        skip: (pageIndex - 1) * BANKING_TABLE_PAGE_SIZE,
+        sortBy: [SortBankContractorAccountsBy.CreatedAtDesc],
+    }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankContractorAccountGQL.UPDATE_OBJS_MUTATION, {
         onCompleted: () => refetch(),
     })
@@ -87,6 +91,24 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
         setSelectedRows([])
     }
 
+    const rowSelection: TableRowSelection<BankContractorAccountType> = useMemo(() => ({
+        type: 'checkbox',
+        onSelect: handleSelectRow,
+        onSelectAll: handleSelectAll,
+        selectedRowKeys: selectedRows.map(row => row.id),
+    }), [handleSelectRow, handleSelectAll, selectedRows])
+    const dataSource = useMemo(() => {
+        return bankContractorAccounts.map(({ ...bankContractor }) => {
+            const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
+
+            if (costItem) {
+                bankContractor.costItem = costItem
+            }
+
+            return bankContractor
+        })
+    }, [bankContractorAccounts, bankCostItems])
+
     const Component = useMemo(() => {
         return () => (
             <Row gutter={TABLE_ROW_GUTTER}>
@@ -94,28 +116,18 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
                 <Col span={24}>
                     <Table
                         loading={isLoading}
-                        dataSource={bankContractorAccounts.map(({ ...bankContractor }) => {
-                            const costItem = bankCostItems.find(costItem => costItem.id === get(bankContractor, 'costItem.id'))
-
-                            if (costItem) {
-                                bankContractor.costItem = costItem
-                            }
-
-                            return bankContractor
-                        })}
+                        dataSource={dataSource}
                         columns={bankContractorAccountTableColumns}
-                        rowSelection={{
-                            type: 'checkbox',
-                            onSelect: handleSelectRow,
-                            onSelectAll: handleSelectAll,
-                            selectedRowKeys: selectedRows.map(row => row.id),
-                        }}
+                        rowSelection={rowSelection}
                         onRow={handleRowClick}
+                        pageSize={BANKING_TABLE_PAGE_SIZE}
+                        totalRows={totalRows}
                     />
                 </Col>
             </Row>
         )
-    }, [bankContractorAccounts, isLoading, bankContractorAccountTableColumns, bankCostItems, selectedRows, handleSelectRow, handleSelectAll, handleRowClick])
+    }, [bankContractorAccounts, dataSource, rowSelection, isLoading, bankContractorAccountTableColumns,
+        handleRowClick, totalRows])
 
     return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }

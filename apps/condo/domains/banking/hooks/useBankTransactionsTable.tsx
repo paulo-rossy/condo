@@ -1,3 +1,4 @@
+import { SortBankTransactionsBy } from '@app/condo/schema'
 import { Row, Col } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
@@ -7,11 +8,12 @@ import { useMutation } from '@open-condo/next/apollo'
 
 import { useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
 import CategoryProgress from '@condo/domains/banking/components/CategoryProgress'
+import { BANKING_TABLE_PAGE_SIZE } from '@condo/domains/banking/constants'
 import { BankTransaction as BankTransactionGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
 import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
-import { Table, DEFAULT_PAGE_SIZE } from '@condo/domains/common/components/Table/Index'
+import { Table } from '@condo/domains/common/components/Table/Index'
 import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
@@ -56,18 +58,19 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     const { bankAccount, type, categoryNotSet } = props
 
     const nullCategoryFilter = categoryNotSet ? { costItem_is_null: true } : {}
-    const pageIndex = getPageIndexFromOffset(offset, DEFAULT_PAGE_SIZE)
+    const pageIndex = getPageIndexFromOffset(offset, BANKING_TABLE_PAGE_SIZE)
 
-    const { objs: bankTransactions, loading, refetch } = BankTransaction.useObjects({
+    const { objs: bankTransactions, loading, refetch, count: totalRows } = BankTransaction.useObjects({
         where: {
             account: { id: bankAccount.id },
             isOutcome: type === 'withdrawal',
             ...nullCategoryFilter,
             ...filtersToWhere(filters),
         },
-        first: DEFAULT_PAGE_SIZE,
-        skip: (pageIndex - 1) * DEFAULT_PAGE_SIZE,
-    })
+        first: BANKING_TABLE_PAGE_SIZE,
+        skip: (pageIndex - 1) * BANKING_TABLE_PAGE_SIZE,
+        sortBy: [SortBankTransactionsBy.NumberDesc, SortBankTransactionsBy.CreatedAtDesc],
+    }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankTransactionGQL.UPDATE_OBJS_MUTATION, {
         onCompleted: () => refetch(),
     })
@@ -132,13 +135,15 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
                         columns={bankTransactionTableColumns}
                         rowSelection={rowSelection}
                         onRow={handleRowClick}
+                        pageSize={BANKING_TABLE_PAGE_SIZE}
+                        totalRows={totalRows}
                     />
                 </Col>
             </Row>
         )
-    }, [isLoading, bankTransactions, dataSource, bankTransactionTableColumns, handleRowClick, type, rowSelection])
+    }, [isLoading, bankTransactions, dataSource, bankTransactionTableColumns, handleRowClick, type, rowSelection, totalRows])
 
-    return { Component,  loading: isLoading, selectedRows, clearSelection, updateSelected }
+    return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }
 
 export default useBankContractorAccountTable
