@@ -12,7 +12,7 @@ const { GQLListSchema } = require('@open-condo/keystone/schema')
 const { getById, find } = require('@open-condo/keystone/schema')
 
 const access = require('@condo/domains/banking/access/BankAccount')
-const { BankTransaction } = require('@condo/domains/banking/utils/serverSchema')
+const { BankTransaction, BankContractorAccount } = require('@condo/domains/banking/utils/serverSchema')
 const { validateNumber } = require('@condo/domains/banking/utils/validate/number.utils')
 const { validateRoutingNumber } = require('@condo/domains/banking/utils/validate/routingNumber.utils')
 const { validateTin } = require('@condo/domains/banking/utils/validate/tin.utils')
@@ -226,6 +226,44 @@ const BankAccount = new GQLListSchema('BankAccount', {
                 })
 
                 return (getTotalAmount(incomeCurrentPeriod) - getTotalAmount(withdrawCurrentPeriod)) + (getTotalAmount(incomePreviousPeriod) - getTotalAmount(withdrawPreviousPeriod))
+            },
+        },
+
+        uncategorizedIncomeTransactions: {
+            schemaDoc: 'Income transactions without costItem',
+            type: Virtual,
+            graphQLReturnType: 'Int',
+            resolver: async (item, _, context) => {
+                return await BankTransaction.count(context, {
+                    account: { id: item.id },
+                    isOutcome: false,
+                    costItem_is_null: true,
+                })
+            },
+        },
+
+        uncategorizedOutcomeTransactions: {
+            schemaDoc: 'Outcome transactions without costItem',
+            type: Virtual,
+            graphQLReturnType: 'Int',
+            resolver: async (item, _, context) => {
+                return await BankTransaction.count(context, {
+                    account: { id: item.id },
+                    isOutcome: true,
+                    costItem_is_null: true,
+                })
+            },
+        },
+
+        uncategorizedContractorAccounts: {
+            schemaDoc: 'Contractor accounts without costItem',
+            type: Virtual,
+            graphQLReturnType: 'Int',
+            resolver: async (item, _, context) => {
+                return await BankContractorAccount.count(context, {
+                    organization: { id: item.organization },
+                    costItem_is_null: true,
+                })
             },
         },
 

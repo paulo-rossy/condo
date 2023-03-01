@@ -1,5 +1,5 @@
 import { SortBankTransactionsBy } from '@app/condo/schema'
-import { Row, Col } from 'antd'
+import { Row, Col, Skeleton } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -12,7 +12,7 @@ import { BANKING_TABLE_PAGE_SIZE } from '@condo/domains/banking/constants'
 import { BankTransaction as BankTransactionGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
-import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
+import { BankTransaction, BankAccountCategoryProgress } from '@condo/domains/banking/utils/clientSchema'
 import { Table } from '@condo/domains/common/components/Table/Index'
 import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
@@ -71,8 +71,14 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
         skip: (pageIndex - 1) * BANKING_TABLE_PAGE_SIZE,
         sortBy: [SortBankTransactionsBy.NumberDesc, SortBankTransactionsBy.CreatedAtDesc],
     }, { fetchPolicy: 'cache-first' })
+    const { obj: emptyCostItems, loading: categoryProgressLoading, refetch: refetchCategoryProgress } = BankAccountCategoryProgress.useObject({
+        where: { id: bankAccount.id },
+    }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankTransactionGQL.UPDATE_OBJS_MUTATION, {
-        onCompleted: () => refetch(),
+        onCompleted: () => {
+            refetch()
+            refetchCategoryProgress()
+        },
     })
     const [bankTransactionTableColumns] = useTableColumns()
 
@@ -122,12 +128,20 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
         })
     }, [bankCostItems, bankTransactions])
 
+    const progressLoading = loading || categoryProgressLoading
     const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const Component = useMemo(() => {
         return () => (
             <Row gutter={TABLE_ROW_GUTTER}>
-                <CategoryProgress data={bankTransactions} entity={type}/>
+                {progressLoading
+                    ? (
+                        <Col span={24}>
+                            <Skeleton paragraph={{ rows: 1 }} />
+                        </Col>
+                    )
+                    : <CategoryProgress totalRows={totalRows} entity={type} emptyCostItems={emptyCostItems} />
+                }
                 <Col span={24}>
                     <Table
                         loading={isLoading}
@@ -141,7 +155,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
                 </Col>
             </Row>
         )
-    }, [isLoading, bankTransactions, dataSource, bankTransactionTableColumns, handleRowClick, type, rowSelection, totalRows])
+    }, [isLoading, progressLoading, dataSource, bankTransactionTableColumns, handleRowClick, type, rowSelection, totalRows, emptyCostItems])
 
     return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }

@@ -1,5 +1,5 @@
 import { SortBankContractorAccountsBy } from '@app/condo/schema'
-import { Col, Row } from 'antd'
+import { Col, Row, Skeleton } from 'antd'
 import get from 'lodash/get'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -11,7 +11,7 @@ import CategoryProgress from '@condo/domains/banking/components/CategoryProgress
 import { BANKING_TABLE_PAGE_SIZE } from '@condo/domains/banking/constants'
 import { BankContractorAccount as BankContractorAccountGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
-import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
+import { BankContractorAccount, BankAccountCategoryProgress } from '@condo/domains/banking/utils/clientSchema'
 import { Table } from '@condo/domains/common/components/Table/Index'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
@@ -20,6 +20,7 @@ import { BaseMutationArgs } from './useBankTransactionsTable'
 import type {
     BankContractorAccount as BankContractorAccountType,
     MutationUpdateBankContractorAccountsArgs,
+    BankAccount,
 } from '@app/condo/schema'
 import type { RowProps } from 'antd'
 import type { TableRowSelection } from 'antd/lib/table/interface'
@@ -29,9 +30,9 @@ const TABLE_ROW_GUTTER: RowProps['gutter'] = [40, 40]
 export type UpdateSelectedContractors = (args: BaseMutationArgs<MutationUpdateBankContractorAccountsArgs>) => Promise<unknown>
 
 interface IUseBankContractorAccountTable {
-    ({ organizationId, categoryNotSet }: {
-        organizationId: string,
-        categoryNotSet: boolean
+    ({ bankAccount, categoryNotSet }: {
+        categoryNotSet: boolean,
+        bankAccount: BankAccount
     }): {
         Component: React.FC,
         loading: boolean,
@@ -41,7 +42,7 @@ interface IUseBankContractorAccountTable {
     }
 }
 
-const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organizationId, categoryNotSet }) => {
+const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ categoryNotSet, bankAccount }) => {
     const router = useRouter()
     const { offset } = parseQuery(router.query)
     const pageIndex = getPageIndexFromOffset(offset, BANKING_TABLE_PAGE_SIZE)
@@ -49,20 +50,27 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
 
     const { objs: bankContractorAccounts, loading, refetch, count: totalRows } = BankContractorAccount.useObjects({
         where: {
-            organization: { id: organizationId },
+            organization: { id: bankAccount.organization.id },
             ...nullCategoryFilter,
         },
         first: BANKING_TABLE_PAGE_SIZE,
         skip: (pageIndex - 1) * BANKING_TABLE_PAGE_SIZE,
         sortBy: [SortBankContractorAccountsBy.CreatedAtDesc],
     }, { fetchPolicy: 'cache-first' })
+    const { obj: emptyCostItems, loading: categoryProgressLoading, refetch: refetchCategoryProgress } = BankAccountCategoryProgress.useObject({
+        where: { id: bankAccount.id },
+    }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankContractorAccountGQL.UPDATE_OBJS_MUTATION, {
-        onCompleted: () => refetch(),
+        onCompleted: () => {
+            refetch()
+            refetchCategoryProgress()
+        },
     })
     const [, bankContractorAccountTableColumns] = useTableColumns()
     const { bankCostItems, loading: bankCostItemsLoading, setSelectedItem } = useBankCostItemContext()
 
     const [selectedRows, setSelectedRows] = useState<Array<BankContractorAccountType>>([])
+    const progressLoading = loading || categoryProgressLoading
     const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const handleSelectRow = useCallback((record, checked) => {
@@ -112,7 +120,15 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
     const Component = useMemo(() => {
         return () => (
             <Row gutter={TABLE_ROW_GUTTER}>
-                <CategoryProgress data={bankContractorAccounts} entity='contractor'/>
+                {progressLoading
+                    ? (
+                        <Col span={24}>
+                            <Skeleton paragraph={{ rows: 1 }} />
+                        </Col>
+                    )
+                    : <CategoryProgress totalRows={totalRows} entity='contractor' emptyCostItems={emptyCostItems} />
+                }
+
                 <Col span={24}>
                     <Table
                         loading={isLoading}
@@ -126,8 +142,8 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ organiz
                 </Col>
             </Row>
         )
-    }, [bankContractorAccounts, dataSource, rowSelection, isLoading, bankContractorAccountTableColumns,
-        handleRowClick, totalRows])
+    }, [dataSource, rowSelection, isLoading, progressLoading, bankContractorAccountTableColumns,
+        handleRowClick, totalRows, emptyCostItems])
 
     return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }

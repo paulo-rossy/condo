@@ -37,6 +37,9 @@ const BANK_SYNC_TASK_FIELDS = `{ account { id } integrationContext { id } organi
 const BankSyncTask = generateGqlQueries('BankSyncTask', BANK_SYNC_TASK_FIELDS)
 /* AUTOGENERATE MARKER <CONST> */
 
+const BANK_ACCOUNT_CATEGORY_PROGRESS_FIELDS = `{ uncategorizedIncomeTransactions uncategorizedOutcomeTransactions uncategorizedContractorAccounts ${COMMON_FIELDS} }`
+const BankAccountCategoryProgress = generateGqlQueries('BankAccount', BANK_ACCOUNT_CATEGORY_PROGRESS_FIELDS)
+
 const CREATE_BANK_ACCOUNT_REQUEST_MUTATION = gql`
     mutation createBankAccountRequest ($data: CreateBankAccountRequestInput!) {
         result: createBankAccountRequest(data: $data) { status id }
@@ -63,6 +66,7 @@ module.exports = {
     BankIntegrationAccountContext,
     BankIntegrationOrganizationContext,
     BankTransaction,
+    BankAccountCategoryProgress,
     BankSyncTask,
     CREATE_BANK_ACCOUNT_REQUEST_MUTATION,
     IMPORT_BANK_TRANSACTIONS_MUTATION,

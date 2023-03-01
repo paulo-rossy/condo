@@ -13290,6 +13290,9 @@ type BankAccountHistoryRecord {
   reportVisible: Boolean
   hasData: JSON
   propertyBalance: JSON
+  uncategorizedIncomeTransactions: JSON
+  uncategorizedOutcomeTransactions: JSON
+  uncategorizedContractorAccounts: JSON
   id: ID!
   v: Int
   createdAt: String
@@ -13498,6 +13501,18 @@ input BankAccountHistoryRecordWhereInput {
   propertyBalance_not: JSON
   propertyBalance_in: [JSON]
   propertyBalance_not_in: [JSON]
+  uncategorizedIncomeTransactions: JSON
+  uncategorizedIncomeTransactions_not: JSON
+  uncategorizedIncomeTransactions_in: [JSON]
+  uncategorizedIncomeTransactions_not_in: [JSON]
+  uncategorizedOutcomeTransactions: JSON
+  uncategorizedOutcomeTransactions_not: JSON
+  uncategorizedOutcomeTransactions_in: [JSON]
+  uncategorizedOutcomeTransactions_not_in: [JSON]
+  uncategorizedContractorAccounts: JSON
+  uncategorizedContractorAccounts_not: JSON
+  uncategorizedContractorAccounts_in: [JSON]
+  uncategorizedContractorAccounts_not_in: [JSON]
   id: ID
   id_not: ID
   id_in: [ID]
@@ -13639,6 +13654,9 @@ input BankAccountHistoryRecordUpdateInput {
   reportVisible: Boolean
   hasData: JSON
   propertyBalance: JSON
+  uncategorizedIncomeTransactions: JSON
+  uncategorizedOutcomeTransactions: JSON
+  uncategorizedContractorAccounts: JSON
   v: Int
   createdAt: String
   updatedAt: String
@@ -13678,6 +13696,9 @@ input BankAccountHistoryRecordCreateInput {
   reportVisible: Boolean
   hasData: JSON
   propertyBalance: JSON
+  uncategorizedIncomeTransactions: JSON
+  uncategorizedOutcomeTransactions: JSON
+  uncategorizedContractorAccounts: JSON
   v: Int
   createdAt: String
   updatedAt: String
@@ -13789,6 +13810,9 @@ type BankAccount {
   """ Total balance based on current account transactions for the previous period 
   """
   propertyBalance: String
+  uncategorizedIncomeTransactions: Int
+  uncategorizedOutcomeTransactions: Int
+  uncategorizedContractorAccounts: Int
   id: ID!
   v: Int
   createdAt: String

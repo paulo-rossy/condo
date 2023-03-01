@@ -81,7 +81,7 @@ interface IPropertyImportBankTransactions {
     ({ bankAccount, organizationId, refetchBankAccount }: PropertyImportBankTransactionProps): React.ReactElement
 }
 interface IPropertyReport {
-    ({ bankAccount, organizationId }: BaseBankReportProps): React.ReactElement
+    ({ bankAccount }: Pick<BaseBankReportProps, 'bankAccount'>): React.ReactElement
 }
 
 // This statuses will use only at MVP version of the app
@@ -197,7 +197,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = (props) 
     )
 }
 
-const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
+const PropertyReport: IPropertyReport = ({ bankAccount }) => {
     const intl = useIntl()
     const IncomeTitle = intl.formatMessage({ id: 'global.income' }, { isSingular: false })
     const WithdrawalTitle = intl.formatMessage({ id: 'global.withdrawal' }, { isSingular: false })
@@ -227,7 +227,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, organizationId }) => {
         selectedRows: selectedContractorAccounts,
         clearSelection: clearBankContractorSelection,
         updateSelected: updateBankContractors,
-    } = useBankContractorAccountTable({ organizationId, categoryNotSet })
+    } = useBankContractorAccountTable({ bankAccount, categoryNotSet })
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
     const { categoryModal, setOpen } = useCategoryModal({
@@ -454,7 +454,7 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                 </Col>
                 {hasBankAccount && (
                     <Col span={24}>
-                        <PropertyReport bankAccount={bankAccount} organizationId={link.organization.id} />
+                        <PropertyReport bankAccount={bankAccount} />
                     </Col>
                 )}
             </Row>

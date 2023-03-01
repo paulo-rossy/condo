@@ -5801,6 +5801,9 @@ export type BankAccount = {
   hasData?: Maybe<Scalars['Boolean']>;
   /**  Total balance based on current account transactions for the previous period  */
   propertyBalance?: Maybe<Scalars['String']>;
+  uncategorizedIncomeTransactions?: Maybe<Scalars['Int']>;
+  uncategorizedOutcomeTransactions?: Maybe<Scalars['Int']>;
+  uncategorizedContractorAccounts?: Maybe<Scalars['Int']>;
   id: Scalars['ID'];
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
@@ -5881,6 +5884,9 @@ export type BankAccountHistoryRecord = {
   reportVisible?: Maybe<Scalars['Boolean']>;
   hasData?: Maybe<Scalars['JSON']>;
   propertyBalance?: Maybe<Scalars['JSON']>;
+  uncategorizedIncomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedOutcomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedContractorAccounts?: Maybe<Scalars['JSON']>;
   id: Scalars['ID'];
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
@@ -5916,6 +5922,9 @@ export type BankAccountHistoryRecordCreateInput = {
   reportVisible?: Maybe<Scalars['Boolean']>;
   hasData?: Maybe<Scalars['JSON']>;
   propertyBalance?: Maybe<Scalars['JSON']>;
+  uncategorizedIncomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedOutcomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedContractorAccounts?: Maybe<Scalars['JSON']>;
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
   updatedAt?: Maybe<Scalars['String']>;
@@ -5956,6 +5965,9 @@ export type BankAccountHistoryRecordUpdateInput = {
   reportVisible?: Maybe<Scalars['Boolean']>;
   hasData?: Maybe<Scalars['JSON']>;
   propertyBalance?: Maybe<Scalars['JSON']>;
+  uncategorizedIncomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedOutcomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedContractorAccounts?: Maybe<Scalars['JSON']>;
   v?: Maybe<Scalars['Int']>;
   createdAt?: Maybe<Scalars['String']>;
   updatedAt?: Maybe<Scalars['String']>;
@@ -6163,6 +6175,18 @@ export type BankAccountHistoryRecordWhereInput = {
   propertyBalance_not?: Maybe<Scalars['JSON']>;
   propertyBalance_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
   propertyBalance_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  uncategorizedIncomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedIncomeTransactions_not?: Maybe<Scalars['JSON']>;
+  uncategorizedIncomeTransactions_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  uncategorizedIncomeTransactions_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  uncategorizedOutcomeTransactions?: Maybe<Scalars['JSON']>;
+  uncategorizedOutcomeTransactions_not?: Maybe<Scalars['JSON']>;
+  uncategorizedOutcomeTransactions_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  uncategorizedOutcomeTransactions_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  uncategorizedContractorAccounts?: Maybe<Scalars['JSON']>;
+  uncategorizedContractorAccounts_not?: Maybe<Scalars['JSON']>;
+  uncategorizedContractorAccounts_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
+  uncategorizedContractorAccounts_not_in?: Maybe<Array<Maybe<Scalars['JSON']>>>;
   id?: Maybe<Scalars['ID']>;
   id_not?: Maybe<Scalars['ID']>;
   id_in?: Maybe<Array<Maybe<Scalars['ID']>>>;
