@@ -1,5 +1,4 @@
 import { Row, Col, Progress } from 'antd'
-import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import React from 'react'
 
@@ -11,22 +10,20 @@ import { Tooltip } from '@condo/domains/common/components/Tooltip'
 import { colors } from '@condo/domains/common/constants/style'
 
 import type { PropertyReportTypes } from './BankCostItemContext'
-import type { BankAccount } from '@app/condo/schema'
 import type { RowProps } from 'antd'
 
 const CATEGORY_PROGRESS_ROW_GUTTER: RowProps['gutter'] = [24, 20]
 const CATEGORY_PROGRESS_ICON_WRAPPER_STYLE: React.CSSProperties = { display: 'flex' }
 
 interface ICategoryProgress {
-    ({ totalRows, entity, emptyCostItems }: {
+    ({ totalRows, entity, emptyRows }: {
         totalRows: number,
         entity: PropertyReportTypes,
-        emptyCostItems?: Pick<BankAccount, 'id' | 'uncategorizedIncomeTransactions' |
-        'uncategorizedOutcomeTransactions' | 'uncategorizedContractorAccounts'>
+        emptyRows?: number
     }): React.ReactElement
 }
 
-const CategoryProgress: ICategoryProgress = ({ totalRows, entity, emptyCostItems }) => {
+const CategoryProgress: ICategoryProgress = ({ totalRows, entity, emptyRows }) => {
     const intl = useIntl()
     const TransactionTitle = intl.formatMessage({ id: 'pages.banking.categoryProgress.title.transaction' })
     const ContractorTitle = intl.formatMessage({ id: 'pages.banking.categoryProgress.title.contractor' })
@@ -35,21 +32,15 @@ const CategoryProgress: ICategoryProgress = ({ totalRows, entity, emptyCostItems
 
     let activeEntity = TransactionTitle
     let tooltipTitle = TransactionTooltipTitle
-    let entityWithEmptyCostItem = 0
 
     if (entity === 'contractor') {
         activeEntity = ContractorTitle
         tooltipTitle = ContractorTooltipTitle
-        entityWithEmptyCostItem = get(emptyCostItems, 'uncategorizedContractorAccounts', 0)
-    } else if (entity === 'income') {
-        entityWithEmptyCostItem = get(emptyCostItems, 'uncategorizedIncomeTransactions', 0)
-    } else if (entity === 'withdrawal') {
-        entityWithEmptyCostItem = get(emptyCostItems, 'uncategorizedOutcomeTransactions', 0)
     }
 
-    const percent = Math.round( (totalRows - entityWithEmptyCostItem) / totalRows * 100)
+    const percent = Math.round( (totalRows - emptyRows) / totalRows * 100)
 
-    if (isNull(emptyCostItems) || isNull(totalRows) || entityWithEmptyCostItem === 0 || percent === 100) {
+    if (!emptyRows || isNull(totalRows) || emptyRows === 0 || percent === 100) {
         return null
     }
 

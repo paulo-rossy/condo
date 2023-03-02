@@ -23,22 +23,19 @@ const BankIntegration = generateGqlQueries('BankIntegration', BANK_INTEGRATION_F
 const BANK_ACCOUNT_FIELDS = `{ organization { id } integrationContext { id enabled integration ${BANK_INTEGRATION_FIELDS} } tin country routingNumber number currencyCode propertyBalance approvedAt approvedBy { id name } importId territoryCode bankName meta reportVisible hasData ${COMMON_FIELDS} }`
 const BankAccount = generateGqlQueries('BankAccount', BANK_ACCOUNT_FIELDS)
 
-const BANK_CONTRACTOR_ACCOUNT_FIELDS = `{ name organization { id } costItem { id category { id name } } tin country routingNumber number currencyCode importId territoryCode bankName meta ${COMMON_FIELDS} }`
+const BANK_CONTRACTOR_ACCOUNT_FIELDS = `{ name organization { id } costItem { id category { id name } } tin country routingNumber number currencyCode importId territoryCode bankName meta relatedTransactions ${COMMON_FIELDS} }`
 const BankContractorAccount = generateGqlQueries('BankContractorAccount', BANK_CONTRACTOR_ACCOUNT_FIELDS)
 
 const BANK_INTEGRATION_ACCOUNT_CONTEXT_FIELDS = `{ integration { id } organization { id } enabled meta ${COMMON_FIELDS} }`
 const BankIntegrationAccountContext = generateGqlQueries('BankIntegrationAccountContext', BANK_INTEGRATION_ACCOUNT_CONTEXT_FIELDS)
 
-const BANK_TRANSACTION_FIELDS = `{ account { id number } contractorAccount { id name } costItem { id } integrationContext { id enabled } organization { id } number date amount isOutcome currencyCode purpose meta importId importRemoteSystem ${COMMON_FIELDS} }`
+const BANK_TRANSACTION_FIELDS = `{ account { id number } contractorAccount { id name costItem { id } } costItem { id } integrationContext { id enabled } organization { id } number date amount isOutcome currencyCode purpose meta importId importRemoteSystem ${COMMON_FIELDS} }`
 const BankTransaction = generateGqlQueries('BankTransaction', BANK_TRANSACTION_FIELDS)
 
 const BANK_SYNC_TASK_FIELDS = `{ account { id } integrationContext { id } organization { id } property { id } status file { id originalFilename publicUrl mimetype } user { id } totalCount processedCount meta ${COMMON_FIELDS} }`
 
 const BankSyncTask = generateGqlQueries('BankSyncTask', BANK_SYNC_TASK_FIELDS)
 /* AUTOGENERATE MARKER <CONST> */
-
-const BANK_ACCOUNT_CATEGORY_PROGRESS_FIELDS = `{ uncategorizedIncomeTransactions uncategorizedOutcomeTransactions uncategorizedContractorAccounts ${COMMON_FIELDS} }`
-const BankAccountCategoryProgress = generateGqlQueries('BankAccount', BANK_ACCOUNT_CATEGORY_PROGRESS_FIELDS)
 
 const CREATE_BANK_ACCOUNT_REQUEST_MUTATION = gql`
     mutation createBankAccountRequest ($data: CreateBankAccountRequestInput!) {
@@ -66,7 +63,6 @@ module.exports = {
     BankIntegrationAccountContext,
     BankIntegrationOrganizationContext,
     BankTransaction,
-    BankAccountCategoryProgress,
     BankSyncTask,
     CREATE_BANK_ACCOUNT_REQUEST_MUTATION,
     IMPORT_BANK_TRANSACTIONS_MUTATION,

@@ -229,44 +229,6 @@ const BankAccount = new GQLListSchema('BankAccount', {
             },
         },
 
-        uncategorizedIncomeTransactions: {
-            schemaDoc: 'Income transactions without costItem',
-            type: Virtual,
-            graphQLReturnType: 'Int',
-            resolver: async (item, _, context) => {
-                return await BankTransaction.count(context, {
-                    account: { id: item.id },
-                    isOutcome: false,
-                    costItem_is_null: true,
-                })
-            },
-        },
-
-        uncategorizedOutcomeTransactions: {
-            schemaDoc: 'Outcome transactions without costItem',
-            type: Virtual,
-            graphQLReturnType: 'Int',
-            resolver: async (item, _, context) => {
-                return await BankTransaction.count(context, {
-                    account: { id: item.id },
-                    isOutcome: true,
-                    costItem_is_null: true,
-                })
-            },
-        },
-
-        uncategorizedContractorAccounts: {
-            schemaDoc: 'Contractor accounts without costItem',
-            type: Virtual,
-            graphQLReturnType: 'Int',
-            resolver: async (item, _, context) => {
-                return await BankContractorAccount.count(context, {
-                    organization: { id: item.organization },
-                    costItem_is_null: true,
-                })
-            },
-        },
-
     },
     plugins: [uuided(), versioned(), tracked(), softDeleted(), dvAndSender(), historical()],
     access: {

@@ -917,6 +917,8 @@
   "pages.banking.categoryProgress.tooltip.transaction": "Транзакции без указания категории отображаются в категории «Прочие»",
   "pages.banking.categoryModal.contractorsSelected": "Выбрано контрагентов",
   "pages.banking.categoryModal.transactionsSelected": "Выбрано транзакций",
+  "pages.banking.categoryModal.transactionsWarning.title": "Категории транзакций изменятся автоматически",
+  "pages.banking.categoryModal.transactionsWarning.description": "Всем транзакциям этого контрагента ({count} шт.) присвоится выбранная категория",
   "pages.banking.report.itemsSelected": "Выбрано элементов: {count}",
   "pages.banking.report.accountSetupTitle": "Настройте синхронизацию с СББОЛом",
   "pages.banking.report.accountNotFound": "Расчетные счета не найдены",

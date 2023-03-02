@@ -11,7 +11,7 @@ import CategoryProgress from '@condo/domains/banking/components/CategoryProgress
 import { BANKING_TABLE_PAGE_SIZE } from '@condo/domains/banking/constants'
 import { BankContractorAccount as BankContractorAccountGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
-import { BankContractorAccount, BankAccountCategoryProgress } from '@condo/domains/banking/utils/clientSchema'
+import { BankContractorAccount } from '@condo/domains/banking/utils/clientSchema'
 import { Table } from '@condo/domains/common/components/Table/Index'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
 
@@ -57,20 +57,27 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ categor
         skip: (pageIndex - 1) * BANKING_TABLE_PAGE_SIZE,
         sortBy: [SortBankContractorAccountsBy.CreatedAtDesc],
     }, { fetchPolicy: 'cache-first' })
-    const { obj: emptyCostItems, loading: categoryProgressLoading, refetch: refetchCategoryProgress } = BankAccountCategoryProgress.useObject({
-        where: { id: bankAccount.id },
+    const {
+        count: emptyCostItemsCount,
+        loading: emptyCostItemsLoading,
+        refetch: refetchEmptyCostItems,
+    } = BankContractorAccount.useCount({
+        where: {
+            organization: { id: bankAccount.organization.id },
+            costItem_is_null: true,
+        },
     }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankContractorAccountGQL.UPDATE_OBJS_MUTATION, {
         onCompleted: () => {
             refetch()
-            refetchCategoryProgress()
+            refetchEmptyCostItems()
         },
     })
     const [, bankContractorAccountTableColumns] = useTableColumns()
     const { bankCostItems, loading: bankCostItemsLoading, setSelectedItem } = useBankCostItemContext()
 
     const [selectedRows, setSelectedRows] = useState<Array<BankContractorAccountType>>([])
-    const progressLoading = loading || categoryProgressLoading
+    const progressLoading = loading || emptyCostItemsLoading
     const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const handleSelectRow = useCallback((record, checked) => {
@@ -126,7 +133,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ categor
                             <Skeleton paragraph={{ rows: 1 }} />
                         </Col>
                     )
-                    : <CategoryProgress totalRows={totalRows} entity='contractor' emptyCostItems={emptyCostItems} />
+                    : <CategoryProgress totalRows={totalRows} entity='contractor' emptyRows={emptyCostItemsCount} />
                 }
 
                 <Col span={24}>
@@ -143,7 +150,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = ({ categor
             </Row>
         )
     }, [dataSource, rowSelection, isLoading, progressLoading, bankContractorAccountTableColumns,
-        handleRowClick, totalRows, emptyCostItems])
+        handleRowClick, totalRows, emptyCostItemsCount])
 
     return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }

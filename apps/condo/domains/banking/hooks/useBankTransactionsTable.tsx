@@ -1,6 +1,7 @@
 import { SortBankTransactionsBy } from '@app/condo/schema'
 import { Row, Col, Skeleton } from 'antd'
 import get from 'lodash/get'
+import isNull from 'lodash/isNull'
 import { useRouter } from 'next/router'
 import React, { useCallback, useMemo, useState } from 'react'
 
@@ -12,7 +13,7 @@ import { BANKING_TABLE_PAGE_SIZE } from '@condo/domains/banking/constants'
 import { BankTransaction as BankTransactionGQL } from '@condo/domains/banking/gql'
 import { useTableColumns } from '@condo/domains/banking/hooks/useTableColumns'
 import { useTableFilters } from '@condo/domains/banking/hooks/useTableFilters'
-import { BankTransaction, BankAccountCategoryProgress } from '@condo/domains/banking/utils/clientSchema'
+import { BankTransaction } from '@condo/domains/banking/utils/clientSchema'
 import { Table } from '@condo/domains/common/components/Table/Index'
 import { useQueryMappers } from '@condo/domains/common/hooks/useQueryMappers'
 import { parseQuery, getPageIndexFromOffset } from '@condo/domains/common/utils/tables.utils'
@@ -71,13 +72,24 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
         skip: (pageIndex - 1) * BANKING_TABLE_PAGE_SIZE,
         sortBy: [SortBankTransactionsBy.NumberDesc, SortBankTransactionsBy.CreatedAtDesc],
     }, { fetchPolicy: 'cache-first' })
-    const { obj: emptyCostItems, loading: categoryProgressLoading, refetch: refetchCategoryProgress } = BankAccountCategoryProgress.useObject({
-        where: { id: bankAccount.id },
+    const {
+        count: emptyCostItemsCount,
+        loading: emptyCostItemsLoading,
+        refetch: refetchEmptyCostItems,
+    } = BankTransaction.useCount({
+        where: {
+            account: { id: bankAccount.id },
+            isOutcome: type === 'withdrawal',
+            AND: [
+                { contractorAccount: { costItem_is_null: true } },
+                { costItem_is_null: true },
+            ],
+        },
     }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankTransactionGQL.UPDATE_OBJS_MUTATION, {
         onCompleted: () => {
             refetch()
-            refetchCategoryProgress()
+            refetchEmptyCostItems()
         },
     })
     const [bankTransactionTableColumns] = useTableColumns()
@@ -118,7 +130,13 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     }), [handleSelectRow, handleSelectAll, selectedRows])
     const dataSource = useMemo(() => {
         return bankTransactions.map(({ ...transaction }) => {
-            const costItem = bankCostItems.find(costItem => costItem.id === get(transaction, 'costItem.id'))
+            const costItem = bankCostItems.find(costItem => {
+                if (isNull(transaction.costItem) && !isNull(transaction.contractorAccount)) {
+                    return costItem.id === get(transaction, 'contractorAccount.costItem.id')
+                }
+
+                return costItem.id === get(transaction, 'costItem.id')
+            })
 
             if (costItem) {
                 transaction.costItem = costItem
@@ -128,7 +146,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
         })
     }, [bankCostItems, bankTransactions])
 
-    const progressLoading = loading || categoryProgressLoading
+    const progressLoading = loading || emptyCostItemsLoading
     const isLoading = loading || bankCostItemsLoading || updateLoading
 
     const Component = useMemo(() => {
@@ -140,7 +158,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
                             <Skeleton paragraph={{ rows: 1 }} />
                         </Col>
                     )
-                    : <CategoryProgress totalRows={totalRows} entity={type} emptyCostItems={emptyCostItems} />
+                    : <CategoryProgress totalRows={totalRows} entity={type} emptyRows={emptyCostItemsCount} />
                 }
                 <Col span={24}>
                     <Table
@@ -155,7 +173,8 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
                 </Col>
             </Row>
         )
-    }, [isLoading, progressLoading, dataSource, bankTransactionTableColumns, handleRowClick, type, rowSelection, totalRows, emptyCostItems])
+    }, [isLoading, progressLoading, dataSource, bankTransactionTableColumns,
+        handleRowClick, type, rowSelection, totalRows, emptyCostItemsCount])
 
     return { Component, loading: isLoading, selectedRows, clearSelection, updateSelected }
 }

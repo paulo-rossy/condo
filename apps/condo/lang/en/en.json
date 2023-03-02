@@ -917,6 +917,8 @@
   "pages.banking.categoryProgress.tooltip.transaction": "Transactions without category will display in «Other» category",
   "pages.banking.categoryModal.contractorsSelected": "Contractors selected",
   "pages.banking.categoryModal.transactionsSelected": "Transactions selected",
+  "pages.banking.categoryModal.transactionsWarning.title": "Transaction categories will be updated automatically",
+  "pages.banking.categoryModal.transactionsWarning.description": "All of the contractor transactions ({count} pcs.) will be updated with selected category",
   "pages.banking.report.itemsSelected": "Items selected: {count}",
   "pages.banking.report.accountSetupTitle": "Setup SBBOL sync",
   "pages.banking.report.accountNotFound": "Bank accounts not found",

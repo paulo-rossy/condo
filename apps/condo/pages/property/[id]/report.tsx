@@ -230,7 +230,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount }) => {
     } = useBankContractorAccountTable({ bankAccount, categoryNotSet })
     const [search, changeSearch] = useSearch<{ search?: string }>()
     const [dateRange, setDateRange] = useDateRangeSearch('date', bankTransactionsTableLoading)
-    const { categoryModal, setOpen } = useCategoryModal({
+    const { CategoryModal, setOpen } = useCategoryModal({
         bankTransactions: selectedItem ? [selectedItem] as [BankTransactionType] : selectedBankTransactions,
         bankContractorAccounts: selectedItem ? [selectedItem] as [BankContractorAccountType] : selectedContractorAccounts,
         type: tab,
@@ -345,7 +345,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount }) => {
                 </Col>
                 <Col span={24}>
                     {tabContent}
-                    {categoryModal}
+                    <CategoryModal />
                 </Col>
             </Row>
             <ActionBar hidden={!totalSelectedItems && !fileImportIntegration}>

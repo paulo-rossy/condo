@@ -5,7 +5,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { useIntl } from '@open-condo/next/intl'
-import { Modal, Typography, List, RadioGroup, Radio, Space, Button } from '@open-condo/ui'
+import { Modal, Typography, List, RadioGroup, Radio, Space, Button, Alert } from '@open-condo/ui'
 
 import { useBankCostItemContext, PropertyReportTypes } from '@condo/domains/banking/components/BankCostItemContext'
 
@@ -27,7 +27,7 @@ interface IUseCategoryModal {
         type: PropertyReportTypes
         updateSelected: UpdateSelectedTransactions | UpdateSelectedContractors
     }): {
-        categoryModal: JSX.Element,
+        CategoryModal: React.FC,
         setOpen: React.Dispatch<React.SetStateAction<boolean>>
     }
 }
@@ -44,6 +44,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     const ChooseCategoryTitle = intl.formatMessage({ id: 'pages.banking.chooseCategory' })
     const ContractorsSelectedTitle = intl.formatMessage({ id: 'pages.banking.categoryModal.contractorsSelected' })
     const TransactionsSelectedTitle = intl.formatMessage({ id: 'pages.banking.categoryModal.transactionsSelected' })
+    const TransactionsWarningTitle = intl.formatMessage({ id: 'pages.banking.categoryModal.transactionsWarning.title' })
     const PaymentPurposeTitle = intl.formatMessage({ id: 'global.paymentPurpose' })
     const SumTitle = intl.formatMessage({ id: 'global.sum' })
     const SaveTitle = intl.formatMessage({ id: 'Save' })
@@ -91,9 +92,10 @@ export const useCategoryModal: IUseCategoryModal = ({
         setSelectedCostItem(null)
     }, [selectedCostItem, type, bankContractorAccounts, bankTransactions, updateSelected])
 
-
-    const categoryModal = useMemo(() => {
+    const CategoryModal = useMemo(() => {
         let modalTitle
+        let alertDescription
+        let totalContractorTransactions = 0
         const listDataSource = []
 
         if (type === 'income' || type === 'withdrawal') {
@@ -118,6 +120,8 @@ export const useCategoryModal: IUseCategoryModal = ({
         } else if (type === 'contractor') {
             if (bankContractorAccounts.length === 1) {
                 modalTitle = `${ContractorTitle} ${get(bankContractorAccounts, '0.name')}`
+                totalContractorTransactions = get(bankContractorAccounts, '0.relatedTransactions')
+
                 listDataSource.push({
                     label: BankAccountTitle,
                     value: get(bankContractorAccounts, '0.number'),
@@ -128,9 +132,14 @@ export const useCategoryModal: IUseCategoryModal = ({
                     value: String(bankContractorAccounts.length),
                 })
             }
+
+            alertDescription = intl.formatMessage(
+                { id: 'pages.banking.categoryModal.transactionsWarning.description' },
+                { count: totalContractorTransactions }
+            )
         }
 
-        return (
+        return () => (
             <Modal
                 title={modalTitle}
                 open={open}
@@ -146,6 +155,16 @@ export const useCategoryModal: IUseCategoryModal = ({
                     <Col span={24}>
                         <List dataSource={listDataSource} />
                     </Col>
+                    {totalContractorTransactions > 0 && (
+                        <Col span={24}>
+                            <Alert
+                                type='warning'
+                                message={TransactionsWarningTitle}
+                                description={alertDescription}
+                                showIcon
+                            />
+                        </Col>
+                    )}
                     <Col span={24}>
                         <Space direction='vertical' size={24}>
                             <Typography.Title level={3}>{ChooseCategoryTitle}</Typography.Title>
@@ -171,7 +190,7 @@ export const useCategoryModal: IUseCategoryModal = ({
     }, [type, open, closeModal, selectedCostItem, loading, handleSave, SaveTitle, ChooseCategoryTitle, onGroupChange,
         bankCostItemGroups, intl, bankTransactions, TransactionTitle, PaymentPurposeTitle, SumTitle, IncomeTitle,
         WithdrawalTitle, TransactionsSelectedTitle, bankContractorAccounts, ContractorTitle, BankAccountTitle,
-        ContractorsSelectedTitle, incomeCostItems])
+        ContractorsSelectedTitle, incomeCostItems, TransactionsWarningTitle])
 
-    return { categoryModal, setOpen }
+    return { CategoryModal, setOpen }
 }
