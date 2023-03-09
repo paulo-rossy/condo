@@ -122,16 +122,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     const { id } = query
     const { user } = useAuth()
     const { BankSyncTask: BankSyncTaskUIInterface } = useBankSyncTaskUIInterface()
-    const resultData = {
-        dv: 1,
-        sender: getClientSideSenderInfo(),
-        ...(bankAccount && { account: { connect: { id: get(bankAccount, 'id') } } }),
-        ...(bankAccount && { integrationContext: { connect: { id: get(bankAccount, 'integrationContext.id') } } }),
-        organization: { connect: { id: organizationId } },
-        property: { connect: { id } },
-        user: { connect: { id: get(user, 'id') } },
-        file,
-    }
+
     const { loading: bankSyncTaskLoading, handleRunTask } = useTaskLauncher(BankSyncTaskUIInterface, {
         dv: 1,
         sender: getClientSideSenderInfo(),
@@ -165,11 +156,10 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl])
 
     useEffect(() => {
-        if (!isNull(file) && !bankSyncTaskLoading && !isProcessing.current) {
-            isProcessing.current = true
+        if (!isNull(file) && !bankSyncTaskLoading) {
             handleRunTask()
         }
-    }, [file, handleRunTask, bankSyncTaskLoading])
+    }, [file, bankSyncTaskLoading])
 
     const handleOpenSbbolModal = useCallback(async () => {
         await push(`${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`)
