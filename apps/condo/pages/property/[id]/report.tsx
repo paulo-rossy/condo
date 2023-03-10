@@ -20,7 +20,7 @@ import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankC
 import { useBankSyncTaskUIInterface } from '@condo/domains/banking/hooks/useBankSyncTaskUIInterface'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
-import { BankAccount, BankIntegrationContext } from '@condo/domains/banking/utils/clientSchema'
+import { BankAccount, BankIntegrationAccountContext } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
 import Input from '@condo/domains/common/components/antd/Input'
 import { Button as DeprecatedButton } from '@condo/domains/common/components/Button'
@@ -45,7 +45,7 @@ import type {
     BankAccount as BankAccountType,
     BankTransaction as BankTransactionType,
     BankContractorAccount as BankContractorAccountType,
-    BankIntegrationContext as BankIntegrationContextType,
+    BankIntegrationAccountContext as BankIntegrationContextType,
     MakeOptional,
 } from '@app/condo/schema'
 import type { RowProps, UploadProps } from 'antd'
@@ -96,7 +96,7 @@ enum IntegrationContextStatus {
 }
 
 /**
- * Collect total BankIntegrationContext sync status from meta field
+ * Collect total BankIntegrationAccountContext sync status from meta field
  * @deprecated
  */
 function getIntegrationsSyncStatus (integrationContexts: Array<BankIntegrationContextType>, status: IntegrationContextStatus) {
@@ -137,7 +137,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     // If current property already connected to the BankAccount -> query only it's context.
     // Otherwise -> query by current organization
     // Not null bankAccount prop means that current property already had a report without imported transactions
-    const { objs: bankIntegrationContexts, loading, stopPolling } = BankIntegrationContext.useObjects({
+    const { objs: bankIntegrationContexts, loading, stopPolling } = BankIntegrationAccountContext.useObjects({
         where: get(bankAccount, 'integrationContext.id', false)
             ? { id: get(bankAccount, 'integrationContext.id') }
             : { organization: { id: organizationId } },

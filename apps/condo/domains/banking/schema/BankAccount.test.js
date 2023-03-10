@@ -88,7 +88,7 @@ describe('BankAccount', () => {
                     canManageBankAccounts: true,
                 })
                 await createTestOrganizationEmployee(adminClient, organization, userClient.user, role)
-                const [bankIntegrationContext] = await createTestBankIntegrationContext(adminClient, bankIntegration, organization)
+                const [bankIntegrationContext] = await createTestBankIntegrationAccountContext(adminClient, bankIntegration, organization)
 
                 const [objCreated, attrs] = await createTestBankAccount(userClient, organization, {
                     integrationContext: { connect: { id: bankIntegrationContext.id } },
@@ -228,7 +228,7 @@ describe('BankAccount', () => {
                     canManageBankAccounts: true,
                 })
                 await createTestOrganizationEmployee(adminClient, organization, userClient.user, role)
-                const [bankIntegrationContext] = await createTestBankIntegrationContext(adminClient, bankIntegration, organization)
+                const [bankIntegrationContext] = await createTestBankIntegrationAccountContext(adminClient, bankIntegration, organization)
 
                 const [objCreated] = await createTestBankAccount(adminClient, organization, {
                     integrationContext: { connect: { id: bankIntegrationContext.id } },
@@ -403,8 +403,7 @@ describe('BankAccount', () => {
                 const [organization] = await createTestOrganization(adminClient)
                 const [bankAccount] = await createTestBankAccount(adminClient, organization)
                 const [contractorAccount] = await createTestBankContractorAccount(adminClient, organization)
-                const [bankIntegrationContext] = await createTestBankIntegrationContext(adminClient, bankIntegration, organization)
-
+                const [bankIntegrationContext] = await createTestBankIntegrationAccountContext(adminClient, bankIntegration, organization)
 
                 const [incomeTransaction] = await createTestBankTransaction(adminClient, bankAccount, contractorAccount, bankIntegrationContext, organization, {
                     date: dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
