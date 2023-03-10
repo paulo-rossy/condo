@@ -222,6 +222,10 @@ export default function GlobalStyle () {
                   border-right: none;
                 }
               }
+              
+              .ant-table .ant-table-body tr:last-of-type {
+                border-radius: 0 0 12px 12px;
+              }
 
               .ant-table-pagination.ant-pagination {
                 margin: 40px 0 16px;
@@ -243,9 +247,10 @@ export default function GlobalStyle () {
                 }
               }
 
-              .ant-table-thead > tr > th {
-                font-weight: 700;
-              }
+               .ant-table-thead > tr > th {
+                 font-size: 12px;
+                 line-height: 20px;
+               }
 
               .ant-table-row {
                 &:hover {
@@ -255,6 +260,22 @@ export default function GlobalStyle () {
               
               .ant-table-row-expand-icon-spaced {
                 display: none;
+              }
+              
+              .ant-table-container {
+                border-bottom-left-radius: 12px;
+                border-bottom-right-radius: 12px;
+              }
+              .ant-table-tbody > tr > td {
+                vertical-align: top;
+              }
+              
+              .ant-table-tbody > tr:last-child > td:first-child {
+                border-bottom-left-radius: 12px;
+              }
+              
+              .ant-table-tbody > tr:last-child > td:last-child {
+                border-bottom-right-radius: 12px;
               }
               
               h1.ant-typography {
