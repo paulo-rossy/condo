@@ -3,7 +3,7 @@ import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import React, { useCallback, useMemo, useState, useEffect, useRef, useContext } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { useFeatureFlags } from '@open-condo/featureflags/FeatureFlagsContext'
@@ -13,9 +13,13 @@ import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
 
 import { BankAccountVisibilitySelect } from '@condo/domains/banking/components/BankAccountVisibilitySelect'
-import { BankCostItemProvider, PropertyReportTypes, useBankCostItemContext } from '@condo/domains/banking/components/BankCostItemContext'
+import {
+    BankCostItemProvider,
+    PropertyReportTypes,
+    useBankCostItemContext,
+} from '@condo/domains/banking/components/BankCostItemContext'
 import { SbbolImportModal } from '@condo/domains/banking/components/SbbolImportModal'
-import { BANK_INTEGRATION_IDS, BANK_SYNC_TASK_STATUS } from '@condo/domains/banking/constants'
+import { BANK_INTEGRATION_IDS } from '@condo/domains/banking/constants'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
 import { useBankSyncTaskUIInterface } from '@condo/domains/banking/hooks/useBankSyncTaskUIInterface'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
@@ -33,6 +37,7 @@ import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/Sbe
 import { Loader } from '@condo/domains/common/components/Loader'
 import DateRangePicker from '@condo/domains/common/components/Pickers/DateRangePicker'
 import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
+import { TASK_STATUS, TasksContext } from '@condo/domains/common/components/tasks'
 import { useTaskLauncher } from '@condo/domains/common/components/tasks/TaskLauncher'
 import { PROPERTY_REPORT_DELETE_ENTITIES } from '@condo/domains/common/constants/featureflags'
 import { useDateRangeSearch } from '@condo/domains/common/hooks/useDateRangeSearch'
@@ -45,7 +50,7 @@ import type {
     BankAccount as BankAccountType,
     BankTransaction as BankTransactionType,
     BankContractorAccount as BankContractorAccountType,
-    BankIntegrationAccountContext as BankIntegrationContextType,
+    BankIntegrationAccountContext as BankIntegrationAccountContextType,
     MakeOptional,
 } from '@app/condo/schema'
 import type { RowProps, UploadProps } from 'antd'
@@ -99,7 +104,7 @@ enum IntegrationContextStatus {
  * Collect total BankIntegrationAccountContext sync status from meta field
  * @deprecated
  */
-function getIntegrationsSyncStatus (integrationContexts: Array<BankIntegrationContextType>, status: IntegrationContextStatus) {
+function getIntegrationsSyncStatus (integrationContexts: Array<BankIntegrationAccountContextType>, status: IntegrationContextStatus) {
     return integrationContexts.some(context => get(context, 'meta.syncTransactionsTaskStatus') === status)
 }
 
@@ -122,6 +127,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     const { id } = query
     const { user } = useAuth()
     const { BankSyncTask: BankSyncTaskUIInterface } = useBankSyncTaskUIInterface()
+    const { tasks } = useContext(TasksContext)
 
     const { loading: bankSyncTaskLoading, handleRunTask } = useTaskLauncher(BankSyncTaskUIInterface, {
         dv: 1,
@@ -145,7 +151,18 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
 
     // Fetch transactions sync status. If it not equals to processing -> stop poll results
     useEffect(() => {
-        if (!loading) {
+        if (tasks.length) {
+            const bankSyncTask = tasks.find(task => task.record.__typename === 'BankSyncTask'
+                && task.record.status === TASK_STATUS.PROCESSING
+                && get(task, 'record.property.id') === id
+            )
+
+            if (bankSyncTask) {
+                stopPolling()
+                isProcessing.current = true
+                setFile(null)
+            }
+        } else if (!loading) {
             isProcessing.current = getIntegrationsSyncStatus(bankIntegrationContexts, IntegrationContextStatus.InProgress)
 
             if (!isProcessing.current) {
@@ -153,7 +170,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
                 setIsCompleted(getIntegrationsSyncStatus(bankIntegrationContexts, IntegrationContextStatus.Completed))
             }
         }
-    }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl])
+    }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl, tasks, id])
 
     // Run task after file from user filesystem was selected
     useEffect(() => {
