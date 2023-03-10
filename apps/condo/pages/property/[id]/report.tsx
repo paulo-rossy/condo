@@ -155,6 +155,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
         }
     }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl])
 
+    // Run task after file from user filesystem was selected
     useEffect(() => {
         if (!isNull(file) && !bankSyncTaskLoading) {
             handleRunTask()
@@ -166,6 +167,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     }, [asPath, push])
     const handleUploadFile = useCallback((options: UploadRequestOption) => {
         const { file } = options
+        isProcessing.current = true
         setFile(file)
     }, [])
 
@@ -175,6 +177,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
 
     const hasSuccessCallback = query.hasOwnProperty(SBBOL_SYNC_CALLBACK_QUERY)
     const hasSyncedData = isNull(bankAccount) && isCompleted
+    const fileImportIntegration = get(bankAccount, ['integrationContext', 'integration', 'id']) === BANK_INTEGRATION_IDS['1CClientBankExchange']
 
     return (
         <BasicEmptyListView image={isProcessing.current ? PROCESSING_IMAGE_PATH : EMPTY_IMAGE_PATH} spaceSize={20}>
@@ -195,7 +198,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
                                 icon={<SberIconWithoutLabel/>}
                                 onClick={handleOpenSbbolModal}
                                 block
-                                disabled={bankSyncTaskLoading}
+                                disabled={bankSyncTaskLoading || fileImportIntegration}
                             >
                                 {ImportSBBOLTitle}
                             </DeprecatedButton>
@@ -208,7 +211,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
                                 icon={<SberIconWithoutLabel/>}
                                 href={`/api/sbbol/auth?redirectUrl=${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`}
                                 block
-                                disabled={bankSyncTaskLoading}
+                                disabled={bankSyncTaskLoading || fileImportIntegration}
                             >
                                 {LoginBySBBOLTitle}
                             </DeprecatedButton>
