@@ -16,8 +16,9 @@ const {
     BankSyncTask,
 } = require('@condo/domains/banking/utils/serverSchema')
 const { convertFrom1CExchangeToSchema } = require('@condo/domains/banking/utils/serverSchema/converters/convertFrom1CExchangeToSchema')
-const { TASK_PROCESSING_STATUS, TASK_COMPLETED_STATUS } = require('@condo/domains/common/constants/tasks')
+const { TASK_PROCESSING_STATUS, TASK_COMPLETED_STATUS, TASK_ERROR_STATUS } = require('@condo/domains/common/constants/tasks')
 const { sleep } = require('@condo/domains/common/utils/sleep')
+const { Organization } = require('@condo/domains/organization/utils/serverSchema')
 
 // Avoids producing "BankSyncTaskHistoryRecord" record for each iteration in the processing loop, when we update progress
 // Practically, we need to
@@ -48,11 +49,19 @@ const importBankTransactionsWorker = async (taskId, bankSyncTaskUtils, fetchCont
 
     const { file, organization, property } = task
 
+    const taskOrganization = await Organization.getOne(context, {
+        id: organization.id,
+    })
+
     let conversionResult
     try {
         const fileStream = await fetchContent(file)
         conversionResult = await convertFrom1CExchangeToSchema(fileStream)
     } catch (error) {
+        await bankSyncTaskUtils.update(context, taskId, {
+            status: TASK_ERROR_STATUS,
+            ...DV_SENDER,
+        })
         throw new Error(`Cannot parse uploaded file in 1CClientBankExchange format. Error: ${error.message}`)
     }
     const { bankAccountData, bankTransactionsData } = conversionResult
@@ -75,8 +84,8 @@ const importBankTransactionsWorker = async (taskId, bankSyncTaskUtils, fetchCont
             ...DV_SENDER,
             number: bankAccountData.number,
             routingNumber: bankAccountData.routingNumber,
-            tin: organization.tin,
-            country: organization.country,
+            tin: taskOrganization.tin,
+            country: taskOrganization.country,
             currencyCode: 'RUB',
             meta: bankAccountData.meta,
             organization: { connect: { id: organization.id } },
@@ -111,6 +120,7 @@ const importBankTransactionsWorker = async (taskId, bankSyncTaskUtils, fetchCont
     }
 
     const taskUpdatePayload = {
+        ...DV_SENDER,
         totalCount: bankTransactionsData.length,
         processedCount: 0,
     }
@@ -177,7 +187,7 @@ const importBankTransactionsWorker = async (taskId, bankSyncTaskUtils, fetchCont
                 const newContractorAccount = await BankContractorAccount.create(context, {
                     ...DV_SENDER,
                     ...transactionData.contractorAccount,
-                    country: organization.country,
+                    country: taskOrganization.country,
                     currencyCode: 'RUB',
                     organization: { connect: { id: organization.id } },
                 })
