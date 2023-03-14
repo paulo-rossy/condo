@@ -54,8 +54,8 @@ const importBankTransactionsWorker = async (taskId, bankSyncTaskUtils, fetchCont
     })
 
     let conversionResult
+    const fileStream = await fetchContent(file)
     try {
-        const fileStream = await fetchContent(file)
         conversionResult = await convertFrom1CExchangeToSchema(fileStream)
     } catch (error) {
         await bankSyncTaskUtils.update(context, taskId, {
@@ -227,9 +227,15 @@ const importBankTransactionsWorker = async (taskId, bankSyncTaskUtils, fetchCont
 }
 
 const fetchContentUsingFileAdapter = async (file) => {
-    const response = await fetch(file.publicUrl)
-    if (response.status >= 400) {
-        throw new Error('Could not fetch file')
+    if (!file.publicUrl) throw new Error('Could not fetch file. Error: missing "publicUrl" property')
+    let response
+    try {
+        response = await fetch(file.publicUrl)
+    } catch (e) {
+        throw new Error(`Could not fetch file by url "${file.publicUrl}". Error: ${e.message}`)
+    }
+    if (!response.ok) {
+        throw new Error(`Could not fetch file by url "${file.publicUrl}". Response code: ${response.status} ${response.statusText}`)
     }
     return response.body
 }
