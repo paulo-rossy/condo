@@ -248,7 +248,7 @@ describe('BankSyncTask', () => {
 
                 expect(obj.dv).toEqual(1)
                 expect(obj.sender).toEqual(attrs.sender)
-                expect(obj.v).toEqual(2)
+                expect(obj.v).toEqual(3)
                 expect(obj.updatedBy).toEqual(expect.objectContaining({ id: adminClient.user.id }))
             })
 
@@ -277,7 +277,7 @@ describe('BankSyncTask', () => {
                 expect(objUpdated.id).toMatch(UUID_RE)
                 expect(objUpdated.dv).toEqual(1)
                 expect(objUpdated.sender).toEqual(attrs.sender)
-                expect(objUpdated.v).toEqual(2)
+                expect(objUpdated.v).toEqual(3)
                 expect(objUpdated.updatedBy).toEqual(expect.objectContaining({ id: userClient.user.id }))
             })
 
