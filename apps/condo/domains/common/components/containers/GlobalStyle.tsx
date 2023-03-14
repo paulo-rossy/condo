@@ -223,8 +223,57 @@ export default function GlobalStyle () {
                 }
               }
               
-              .ant-table .ant-table-body tr:last-of-type {
-                border-radius: 0 0 12px 12px;
+              .ant-table.ant-table-bordered > .ant-table-container {
+                border-top: 1px solid ${colors.inputBorderGrey};
+                border-right: 1px solid ${colors.inputBorderGrey};
+                border-bottom: 1px solid ${colors.inputBorderGrey};
+              }
+              .ant-table.ant-table-bordered .ant-table-sticky-holder {
+                border-radius: 12px;
+              }
+              
+              .ant-table .ant-table-container::before, .ant-table .ant-table-container::after {
+                display: none;
+              }
+              
+              .ant-table.ant-table-bordered .ant-table-body tr:last-of-type td {
+                border-bottom: none;
+              }
+              .ant-table.ant-table-bordered > .ant-table-container > .ant-table-header > table > thead > tr > th,
+              .ant-table.ant-table-bordered > .ant-table-container > .ant-table-body > table > tbody > tr > td {
+                border-right: none;
+              }
+              
+              .ant-table.ant-table-bordered > .ant-table-container > .ant-table-content > table, .ant-table.ant-table-bordered > .ant-table-container > .ant-table-header > table {
+                border: none;
+              }
+              
+              .ant-table.ant-table-bordered div::-webkit-scrollbar-track {
+                border: none;
+                //border-bottom: 1px solid ${colors.inputBorderGrey};
+                border-radius: 12px;
+              }
+              
+              .ant-table.ant-table-bordered div::-webkit-scrollbar {
+                width: 14px;
+                border-right: 5px solid transparent;
+              }
+              .ant-table.ant-table-bordered div::-webkit-scrollbar-thumb {
+                background-color: ${colors.inputBorderGrey};
+                border-radius: 12px;
+                border: 4px solid transparent;
+                background-clip: padding-box;
+                width: 5px;
+              }
+              .ant-table.ant-table-bordered div::-webkit-scrollbar-thumb:hover {
+                border: 2px solid transparent;
+              }
+              .ant-table.ant-table-bordered div::-webkit-scrollbar-track {
+                border-radius: 12px;
+              }
+              .ant-table.ant-table-bordered div::-webkit-scrollbar-track,
+              .ant-table.ant-table-bordered div::-webkit-scrollbar-corner {
+                background-color: transparent;
               }
 
               .ant-table-pagination.ant-pagination {

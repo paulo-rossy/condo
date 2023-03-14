@@ -54,15 +54,11 @@ const useFileImport: IUseFileImport = ({ propertyId, bankAccount, organizationId
     }, [file, loading])
     useEffect(() => {
         if (tasks.length) {
-            console.group('effect')
-            console.log('loading = ', loading)
             const bankSyncTask = tasks.find(task => task.record.__typename === 'BankSyncTask'
                 && task.record.status === TASK_STATUS.PROCESSING
                 && get(task, 'record.property.id') === propertyId
             )
 
-            console.log('tasks = ', bankSyncTask)
-            console.groupEnd()
             if (bankSyncTask) {
                 setFile(null)
             }
