@@ -250,7 +250,7 @@ const PropertyReport: IPropertyReport = ({ bankAccount, propertyId }) => {
         updateSelected: tab === 'contractor' ? updateBankContractors : updateBankTransactions,
     })
     const { useFlag } = useFeatureFlags()
-    const { loading: fileImportLoading, Component: FileImportButton } = useFileImport({
+    const { Component: FileImportButton } = useFileImport({
         propertyId,
         bankAccount,
         organizationId: get(bankAccount, 'organization.id'),
@@ -433,6 +433,8 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
         return (<Loader fill />)
     }
 
+    const dataUpdatedAt = get(bankAccount, 'meta.amountAt', 'updatedAt')
+
     return (
         <>
             <Row gutter={hasBankAccount ? [0, 40] : 0}>
@@ -461,7 +463,7 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                                                 {
                                                     intl.formatMessage(
                                                         { id: 'pages.condo.property.report.dataUpdatedTitle' },
-                                                        { updatedAt: intl.formatDate(bankAccount.updatedAt, DATE_DISPLAY_FORMAT) }
+                                                        { updatedAt: intl.formatDate(dataUpdatedAt, DATE_DISPLAY_FORMAT) }
                                                     )
                                                 }
                                             </Typography.Paragraph>

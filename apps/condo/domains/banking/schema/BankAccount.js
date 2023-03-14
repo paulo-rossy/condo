@@ -199,6 +199,12 @@ const BankAccount = new GQLListSchema('BankAccount', {
             schemaDoc: 'Total balance based on current account transactions for the previous period',
             type: Virtual,
             resolver: async (item, _, context) => {
+                const calculatedValue = get(item, 'meta.amount')
+
+                if (calculatedValue) {
+                    return calculatedValue
+                }
+
                 const accountFilter = { account: { id: item.id } }
 
                 const incomePreviousPeriod = await BankTransaction.getAll(context, {
