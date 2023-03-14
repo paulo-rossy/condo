@@ -1,13 +1,12 @@
 import get from 'lodash/get'
 import isNull from 'lodash/isNull'
-import React, { useState, useCallback, useEffect, useMemo, useContext } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { useAuth } from '@open-condo/next/auth'
 
 import FileImportButton from '@condo/domains/banking/components/FileImportButton'
 import { useBankSyncTaskUIInterface } from '@condo/domains/banking/hooks/useBankSyncTaskUIInterface'
-import { TasksContext, TASK_STATUS } from '@condo/domains/common/components/tasks'
 import { useTaskLauncher } from '@condo/domains/common/components/tasks/TaskLauncher'
 
 import type { BankAccount as BankAccountType } from '@app/condo/schema'
@@ -32,6 +31,7 @@ interface IUseFileImport {
 
 const useFileImport: IUseFileImport = ({ propertyId, bankAccount, organizationId }) => {
     const [file, setFile] = useState<UploadRequestOption['file']>(null)
+    const taskWasStarted = useRef(false)
 
     const { user } = useAuth()
     const { BankSyncTask: BankSyncTaskUIInterface } = useBankSyncTaskUIInterface()
@@ -45,27 +45,16 @@ const useFileImport: IUseFileImport = ({ propertyId, bankAccount, organizationId
         ...(bankAccount && { integrationContext: { connect: { id: get(bankAccount, 'integrationContext.id') } } }),
         file,
     })
-    const { tasks } = useContext(TasksContext)
 
     useEffect(() => {
-        if (!isNull(file) && !loading) {
+        if (!isNull(file) && !loading && !taskWasStarted.current) {
             handleRunTask()
+            taskWasStarted.current = true
         }
     }, [file, loading])
-    useEffect(() => {
-        if (tasks.length) {
-            const bankSyncTask = tasks.find(task => task.record.__typename === 'BankSyncTask'
-                && task.record.status === TASK_STATUS.PROCESSING
-                && get(task, 'record.property.id') === propertyId
-            )
-
-            if (bankSyncTask) {
-                setFile(null)
-            }
-        }
-    }, [tasks, propertyId, loading])
 
     const handleUpload = useCallback((options: UploadRequestOption) => {
+        taskWasStarted.current = false
         setFile(options.file)
     }, [])
 
