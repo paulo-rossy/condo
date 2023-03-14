@@ -88,6 +88,7 @@ const useBankContractorAccountTable: IUseBankContractorAccountTable = (props) =>
     }, { fetchPolicy: 'cache-first' })
     const [updateSelected, { loading: updateLoading }] = useMutation(BankTransactionGQL.UPDATE_OBJS_MUTATION, {
         onCompleted: () => {
+            setSelectedRows([])
             refetch()
             refetchEmptyCostItems()
         },

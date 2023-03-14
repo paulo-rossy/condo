@@ -1,13 +1,12 @@
-import { Row, Col, Tabs, Space, Upload } from 'antd'
+import { Row, Col, Tabs, Space } from 'antd'
 import get from 'lodash/get'
 import isNull from 'lodash/isNull'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import React, { useCallback, useMemo, useState, useEffect, useRef, useContext } from 'react'
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 
 import { getClientSideSenderInfo } from '@open-condo/codegen/utils/userId'
 import { useFeatureFlags } from '@open-condo/featureflags/FeatureFlagsContext'
-import { useAuth } from '@open-condo/next/auth'
 import { useIntl } from '@open-condo/next/intl'
 import { useOrganization } from '@open-condo/next/organization'
 import { Typography, Button, Checkbox } from '@open-condo/ui'
@@ -21,9 +20,9 @@ import {
 import { SbbolImportModal } from '@condo/domains/banking/components/SbbolImportModal'
 import { BANK_INTEGRATION_IDS } from '@condo/domains/banking/constants'
 import useBankContractorAccountTable from '@condo/domains/banking/hooks/useBankContractorAccountTable'
-import { useBankSyncTaskUIInterface } from '@condo/domains/banking/hooks/useBankSyncTaskUIInterface'
 import useBankTransactionsTable from '@condo/domains/banking/hooks/useBankTransactionsTable'
 import { useCategoryModal } from '@condo/domains/banking/hooks/useCategoryModal'
+import { useFileImport } from '@condo/domains/banking/hooks/useFileImport'
 import { BankAccount, BankIntegrationAccountContext } from '@condo/domains/banking/utils/clientSchema'
 import ActionBar from '@condo/domains/common/components/ActionBar'
 import Input from '@condo/domains/common/components/antd/Input'
@@ -37,8 +36,6 @@ import { SberIconWithoutLabel } from '@condo/domains/common/components/icons/Sbe
 import { Loader } from '@condo/domains/common/components/Loader'
 import DateRangePicker from '@condo/domains/common/components/Pickers/DateRangePicker'
 import { TableFiltersContainer } from '@condo/domains/common/components/TableFiltersContainer'
-import { TASK_STATUS, TasksContext } from '@condo/domains/common/components/tasks'
-import { useTaskLauncher } from '@condo/domains/common/components/tasks/TaskLauncher'
 import { PROPERTY_REPORT_DELETE_ENTITIES } from '@condo/domains/common/constants/featureflags'
 import { useDateRangeSearch } from '@condo/domains/common/hooks/useDateRangeSearch'
 import { useSearch } from '@condo/domains/common/hooks/useSearch'
@@ -53,8 +50,7 @@ import type {
     BankIntegrationAccountContext as BankIntegrationAccountContextType,
     MakeOptional,
 } from '@app/condo/schema'
-import type { RowProps, UploadProps } from 'antd'
-import type { UploadRequestOption } from 'rc-upload/lib/interface'
+import type { RowProps } from 'antd'
 
 const PROPERTY_REPORT_PAGE_ROW_GUTTER: RowProps['gutter'] = [24, 20]
 const PROPERTY_REPORT_PAGE_ROW_TABLE_GUTTER: RowProps['gutter'] = [0, 40]
@@ -65,11 +61,6 @@ const DATE_DISPLAY_FORMAT = {
     year: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
-}
-const UPLOAD_OPTIONS: UploadProps = {
-    multiple: false,
-    itemRender: () => null,
-    accept: '.txt',
 }
 const SBBOL_SYNC_CALLBACK_QUERY = 'sbbol-sync-callback'
 const EMPTY_IMAGE_PATH = '/dino/searching@2x.png'
@@ -90,7 +81,7 @@ interface IPropertyImportBankTransactions {
     ({ bankAccount, organizationId, refetchBankAccount }: PropertyImportBankTransactionProps): React.ReactElement
 }
 interface IPropertyReport {
-    ({ bankAccount }: Pick<BaseBankReportProps, 'bankAccount'>): React.ReactElement
+    ({ bankAccount, propertyId }: Pick<BaseBankReportProps, 'bankAccount'> & { propertyId: string }): React.ReactElement
 }
 
 // This statuses will use only at MVP version of the app
@@ -120,24 +111,14 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     const SyncSuccessTitle = intl.formatMessage({ id: 'pages.banking.report.syncSuccess.title' })
 
     const [isCompleted, setIsCompleted] = useState(false)
-    const [file, setFile] = useState(null)
     const isProcessing = useRef(false)
 
     const { query, asPath, push } = useRouter()
     const { id } = query
-    const { user } = useAuth()
-    const { BankSyncTask: BankSyncTaskUIInterface } = useBankSyncTaskUIInterface()
-    const { tasks } = useContext(TasksContext)
-
-    const { loading: bankSyncTaskLoading, handleRunTask } = useTaskLauncher(BankSyncTaskUIInterface, {
-        dv: 1,
-        sender: getClientSideSenderInfo(),
-        ...(bankAccount && { account: { connect: { id: get(bankAccount, 'id') } } }),
-        ...(bankAccount && { integrationContext: { connect: { id: get(bankAccount, 'integrationContext.id') } } }),
-        organization: { connect: { id: organizationId } },
-        property: { connect: { id } },
-        user: { connect: { id: get(user, 'id') } },
-        file,
+    const { loading: fileImportLoading, Component: FileImportButton } = useFileImport({
+        propertyId: id as string,
+        organizationId,
+        bankAccount,
     })
 
     // If current property already connected to the BankAccount -> query only it's context.
@@ -151,16 +132,10 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
 
     // Fetch transactions sync status. If it not equals to processing -> stop poll results
     useEffect(() => {
-        if (tasks.length) {
-            const bankSyncTask = tasks.find(task => task.record.__typename === 'BankSyncTask'
-                && task.record.status === TASK_STATUS.PROCESSING
-                && get(task, 'record.property.id') === id
-            )
-
-            if (bankSyncTask) {
+        if (fileImportLoading) {
+            if (!isProcessing.current) {
                 stopPolling()
                 isProcessing.current = true
-                setFile(null)
             }
         } else if (!loading) {
             isProcessing.current = getIntegrationsSyncStatus(bankIntegrationContexts, IntegrationContextStatus.InProgress)
@@ -170,23 +145,11 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
                 setIsCompleted(getIntegrationsSyncStatus(bankIntegrationContexts, IntegrationContextStatus.Completed))
             }
         }
-    }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl, tasks, id])
-
-    // Run task after file from user filesystem was selected
-    useEffect(() => {
-        if (!isNull(file) && !bankSyncTaskLoading) {
-            handleRunTask()
-        }
-    }, [file, bankSyncTaskLoading])
+    }, [bankIntegrationContexts, loading, stopPolling, SyncSuccessTitle, intl, id, fileImportLoading])
 
     const handleOpenSbbolModal = useCallback(async () => {
         await push(`${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`)
     }, [asPath, push])
-    const handleUploadFile = useCallback((options: UploadRequestOption) => {
-        const { file } = options
-        isProcessing.current = true
-        setFile(file)
-    }, [])
 
     if (loading) {
         return <Loader fill size='large' />
@@ -215,7 +178,8 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
                                 icon={<SberIconWithoutLabel/>}
                                 onClick={handleOpenSbbolModal}
                                 block
-                                disabled={bankSyncTaskLoading || fileImportIntegration}
+                                hidden={fileImportIntegration}
+                                disabled={fileImportLoading}
                             >
                                 {ImportSBBOLTitle}
                             </DeprecatedButton>
@@ -228,21 +192,16 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
                                 icon={<SberIconWithoutLabel/>}
                                 href={`/api/sbbol/auth?redirectUrl=${asPath}?${SBBOL_SYNC_CALLBACK_QUERY}`}
                                 block
-                                disabled={bankSyncTaskLoading || fileImportIntegration}
+                                hidden={fileImportIntegration}
+                                disabled={fileImportLoading}
                             >
                                 {LoginBySBBOLTitle}
                             </DeprecatedButton>
                         )
                     }
-                    <Upload {...UPLOAD_OPTIONS} customRequest={handleUploadFile}>
-                        <Button
-                            type='secondary'
-                            loading={bankSyncTaskLoading}
-                            stateless
-                        >
-                            {ImportFileTitle}
-                        </Button>
-                    </Upload>
+                    <FileImportButton type='secondary'>
+                        {ImportFileTitle}
+                    </FileImportButton>
                 </>
             )}
             {hasSuccessCallback && (
@@ -252,7 +211,7 @@ const PropertyImportBankTransactions: IPropertyImportBankTransactions = ({ bankA
     )
 }
 
-const PropertyReport: IPropertyReport = ({ bankAccount }) => {
+const PropertyReport: IPropertyReport = ({ bankAccount, propertyId }) => {
     const intl = useIntl()
     const IncomeTitle = intl.formatMessage({ id: 'global.income' }, { isSingular: false })
     const WithdrawalTitle = intl.formatMessage({ id: 'global.withdrawal' }, { isSingular: false })
@@ -272,7 +231,6 @@ const PropertyReport: IPropertyReport = ({ bankAccount }) => {
     const { selectedItem } = useBankCostItemContext()
     const {
         Component: BankTransactionsTable,
-        loading: bankTransactionsTableLoading,
         selectedRows: selectedBankTransactions,
         clearSelection: clearBankTransactionSelection,
         updateSelected: updateBankTransactions,
@@ -292,6 +250,11 @@ const PropertyReport: IPropertyReport = ({ bankAccount }) => {
         updateSelected: tab === 'contractor' ? updateBankContractors : updateBankTransactions,
     })
     const { useFlag } = useFeatureFlags()
+    const { loading: fileImportLoading, Component: FileImportButton } = useFileImport({
+        propertyId,
+        bankAccount,
+        organizationId: get(bankAccount, 'organization.id'),
+    })
 
     // Handlers
     const handleSearchChange = useCallback((e) => {
@@ -434,7 +397,14 @@ const PropertyReport: IPropertyReport = ({ bankAccount }) => {
                                     </Button>
                                 </>
                             )
-                            : <Button type='primary' hidden={!fileImportIntegration}>{UploadFileTitle}</Button>
+                            : (
+                                <FileImportButton
+                                    hidden={!fileImportIntegration}
+                                    type='primary'
+                                >
+                                    {UploadFileTitle}
+                                </FileImportButton>
+                            )
                     }
 
                 </Space>
@@ -509,7 +479,7 @@ const PropertyReportPageContent: IPropertyReportPageContent = ({ property }) => 
                 </Col>
                 {hasBankAccount && (
                     <Col span={24}>
-                        <PropertyReport bankAccount={bankAccount} />
+                        <PropertyReport bankAccount={bankAccount} propertyId={property.id} />
                     </Col>
                 )}
             </Row>

@@ -1,4 +1,8 @@
+import { notification } from 'antd'
+import { useRouter } from 'next/router'
+
 import { useIntl } from '@open-condo/next/intl'
+import { Button } from '@open-condo/ui'
 
 import { BankSyncTask } from '@condo/domains/banking/utils/clientSchema'
 import { ITask, TASK_REMOVE_STRATEGY } from '@condo/domains/common/components/tasks'
@@ -13,6 +17,9 @@ export const useBankSyncTaskUIInterface = () => {
     const BankSyncTaskProgressDescriptionPreparing = intl.formatMessage({ id: 'tasks.BankSyncTask.progress.description.preparing' })
     const BankSyncTaskProgressDescriptionProcessing = intl.formatMessage({ id: 'tasks.BankSyncTask.progress.description.processing' })
     const BankSyncTaskProgressDescriptionCompleted = intl.formatMessage({ id: 'tasks.BankSyncTask.progress.description.completed' })
+    const UpdateTitle = intl.formatMessage({ id: 'Update' })
+
+    const { reload } = useRouter()
 
     const TaskUIInterface: ITask = {
         storage: new TasksCondoStorage({
@@ -36,8 +43,14 @@ export const useBankSyncTaskUIInterface = () => {
         calculateProgress: (task: BankSyncTaskType) => {
             return Math.floor(task.processedCount / task.totalCount) * 100
         },
-        onComplete: null,
-        onCancel: null,
+        onComplete: () => {
+            notification.success({
+                message: BankSyncTaskProgressDescriptionCompleted,
+                btn: <Button onClick={() => reload()} type='primary'>{UpdateTitle}</Button>,
+                duration: 0,
+            })
+        },
+        onCancel: () => null,
     }
 
     return {
