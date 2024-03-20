@@ -70618,17 +70618,15 @@ export type RegisterMetersItemOutput = {
   result: RegisterMetersItemResultOutput;
 };
 
-export type RegisterMetersItemResultDataUnion = RegisterMetersItemResultSuccessOutput | RegisterMetersItemResultErroneousOutput;
-
 export type RegisterMetersItemResultErroneousOutput = {
   __typename?: 'RegisterMetersItemResultErroneousOutput';
-  error: Scalars['String'];
+  message: Scalars['String'];
 };
 
 export type RegisterMetersItemResultOutput = {
   __typename?: 'RegisterMetersItemResultOutput';
-  err: Scalars['Boolean'];
-  data: RegisterMetersItemResultDataUnion;
+  error?: Maybe<RegisterMetersItemResultErroneousOutput>;
+  data?: Maybe<RegisterMetersItemResultSuccessOutput>;
 };
 
 export type RegisterMetersItemResultSuccessOutput = {
@@ -70678,17 +70676,15 @@ export type RegisterMetersMeterReadingOutput = {
   result?: Maybe<RegisterMetersMeterReadingResultOutput>;
 };
 
-export type RegisterMetersMeterReadingResultDataUnion = RegisterMetersMeterReadingResultSuccessOutput | RegisterMetersMeterReadingResultErroneousOutput;
-
 export type RegisterMetersMeterReadingResultErroneousOutput = {
   __typename?: 'RegisterMetersMeterReadingResultErroneousOutput';
-  error: Scalars['String'];
+  message: Scalars['String'];
 };
 
 export type RegisterMetersMeterReadingResultOutput = {
   __typename?: 'RegisterMetersMeterReadingResultOutput';
-  err: Scalars['Boolean'];
-  data: RegisterMetersMeterReadingResultDataUnion;
+  error?: Maybe<RegisterMetersMeterReadingResultErroneousOutput>;
+  data?: Maybe<RegisterMetersMeterReadingResultSuccessOutput>;
 };
 
 export type RegisterMetersMeterReadingResultSuccessOutput = {
@@ -70696,17 +70692,15 @@ export type RegisterMetersMeterReadingResultSuccessOutput = {
   id: Scalars['ID'];
 };
 
-export type RegisterMetersMeterResultDataUnion = RegisterMetersMeterResultSuccessOutput | RegisterMetersMeterResultErroneousOutput;
-
 export type RegisterMetersMeterResultErroneousOutput = {
   __typename?: 'RegisterMetersMeterResultErroneousOutput';
-  error: Scalars['String'];
+  message: Scalars['String'];
 };
 
 export type RegisterMetersMeterResultOutput = {
   __typename?: 'RegisterMetersMeterResultOutput';
-  err: Scalars['Boolean'];
-  data: RegisterMetersMeterResultDataUnion;
+  error?: Maybe<RegisterMetersMeterResultErroneousOutput>;
+  data?: Maybe<RegisterMetersMeterResultSuccessOutput>;
 };
 
 export type RegisterMetersMeterResultSuccessOutput = {
