@@ -11,12 +11,14 @@ const { OnBoarding: OnBoardingGQL } = require('@condo/domains/onboarding/gql')
 const { OnBoardingStep: OnBoardingStepGQL } = require('@condo/domains/onboarding/gql')
 const { CREATE_ONBOARDING_MUTATION } = require('@condo/domains/onboarding/gql')
 const { TourStep: TourStepGQL } = require('@condo/domains/onboarding/gql')
+const { UserHelpRequest: UserHelpRequestGQL } = require('@condo/domains/onboarding/gql')
 /* AUTOGENERATE MARKER <IMPORT> */
 
 const OnBoarding = generateGQLTestUtils(OnBoardingGQL)
 const OnBoardingStep = generateGQLTestUtils(OnBoardingStepGQL)
 
 const TourStep = generateGQLTestUtils(TourStepGQL)
+const UserHelpRequest = generateGQLTestUtils(UserHelpRequestGQL)
 /* AUTOGENERATE MARKER <CONST> */
 
 async function createTestOnBoarding (client, extraAttrs = {}) {
@@ -128,6 +130,36 @@ async function updateTestTourStep (client, id, extraAttrs = {}) {
     return [obj, attrs]
 }
 
+async function createTestUserHelpRequest (client, organization, extraAttrs = {}) {
+    if (!client) throw new Error('no client')
+    if (!organization || !organization.id) throw new Error('no organization.id')
+    const sender = { dv: 1, fingerprint: faker.random.alphaNumeric(8) }
+
+    const attrs = {
+        dv: 1,
+        sender,
+        organization: { connect: { id: organization.id } },
+        type: 'callback',
+        ...extraAttrs,
+    }
+    const obj = await UserHelpRequest.create(client, attrs)
+    return [obj, attrs]
+}
+
+async function updateTestUserHelpRequest (client, id, extraAttrs = {}) {
+    if (!client) throw new Error('no client')
+    if (!id) throw new Error('no id')
+    const sender = { dv: 1, fingerprint: faker.random.alphaNumeric(8) }
+
+    const attrs = {
+        dv: 1,
+        sender,
+        ...extraAttrs,
+    }
+    const obj = await UserHelpRequest.update(client, id, attrs)
+    return [obj, attrs]
+}
+
 /* AUTOGENERATE MARKER <FACTORY> */
 
 module.exports = {
@@ -135,5 +167,6 @@ module.exports = {
     OnBoardingStep, createTestOnBoardingStep, updateTestOnBoardingStep,
     createOnBoardingByTestClient,
     TourStep, createTestTourStep, updateTestTourStep,
+    UserHelpRequest, createTestUserHelpRequest, updateTestUserHelpRequest,
 /* AUTOGENERATE MARKER <EXPORTS> */
 }

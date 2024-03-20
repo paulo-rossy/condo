@@ -28,6 +28,9 @@ const CREATE_ONBOARDING_MUTATION = gql`
 const TOUR_STEP_FIELDS = `{ organization { id } type status order ${COMMON_FIELDS} }`
 const TourStep = generateGqlQueries('TourStep', TOUR_STEP_FIELDS)
 
+const USER_HELP_REQUEST_FIELDS = `{ type organization { id } phone file { id } meta ${COMMON_FIELDS} }`
+const UserHelpRequest = generateGqlQueries('UserHelpRequest', USER_HELP_REQUEST_FIELDS)
+
 /* AUTOGENERATE MARKER <CONST> */
 
 module.exports = {
@@ -35,5 +38,6 @@ module.exports = {
     OnBoardingStep,
     CREATE_ONBOARDING_MUTATION,
     TourStep,
+    UserHelpRequest,
 /* AUTOGENERATE MARKER <EXPORTS> */
 }

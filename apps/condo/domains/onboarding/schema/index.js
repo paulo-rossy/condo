@@ -7,6 +7,7 @@ const { CreateOnBoardingService } = require('./CreateOnBoardingService')
 const { OnBoarding } = require('./OnBoarding')
 const { OnBoardingStep } = require('./OnBoardingStep')
 const { TourStep } = require('./TourStep')
+const { UserHelpRequest } = require('./UserHelpRequest')
 /* AUTOGENERATE MARKER <REQUIRE> */
 
 module.exports = {
@@ -14,5 +15,6 @@ module.exports = {
     OnBoardingStep,
     CreateOnBoardingService,
     TourStep,
+    UserHelpRequest,
 /* AUTOGENERATE MARKER <EXPORTS> */
 }
