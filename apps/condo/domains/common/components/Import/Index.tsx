@@ -140,7 +140,7 @@ const ImportWrapper: React.FC<IImportWrapperProps> = (props) => {
 
     const [activeModal, setActiveModal] = useState<ActiveModalType>(null)
 
-    const { Modal: ImportHelpModal, openImportHelpModal } = useImportHelpModal()
+    const { Modal: ImportHelpModal, openImportHelpModal } = useImportHelpModal({ domainName })
 
     const totalRowsRef = useRef(0)
     const setTotalRowsRef = (value: number) => {
