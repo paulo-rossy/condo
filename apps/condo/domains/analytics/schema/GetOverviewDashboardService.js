@@ -80,6 +80,10 @@ const GetOverviewDashboardService = new GQLCustomSchema('GetOverviewDashboardSer
         },
         {
             access: true,
+            type: 'type PropertyGroupedCounter { count: String!, address: String! }',
+        },
+        {
+            access: true,
             type: 'type ReceiptOverviewResult { receipts: [ReceiptGroupedCounter!], sum: String! }',
         },
         {
@@ -92,7 +96,7 @@ const GetOverviewDashboardService = new GQLCustomSchema('GetOverviewDashboardSer
         },
         {
             access: true,
-            type: 'type PropertyOverviewResult { sum: String! }',
+            type: 'type PropertyOverviewResult { properties: [PropertyGroupedCounter!], sum: String! }',
         },
         {
             access: true,

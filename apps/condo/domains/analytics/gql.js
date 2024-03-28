@@ -65,6 +65,10 @@ const GET_OVERVIEW_DASHBOARD_MUTATION = gql`
                 }
                 property {
                     sum
+                    properties {
+                        count
+                        address
+                    }
                 }
                 payment {
                     payments {

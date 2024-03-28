@@ -521,6 +521,35 @@ describe('GetOverviewDashboardService', () => {
 
                 expect(data.overview).toHaveProperty(['property', 'sum'], String(updatedProperty.unitsCount))
             })
+
+            it('should return distributed count of organization properties living units', async () => {
+                const [updatedProperty] = await updateTestProperty(admin, property.id, {
+                    map: buildingMapJson,
+                })
+
+                expect(updatedProperty.unitsCount).toBeGreaterThan(0)
+
+                const [data] = await getOverviewDashboardByTestClient(organizationAdminUser,
+                    {
+                        where: {
+                            organization: organization.id,
+                            dateFrom,
+                            dateTo,
+                        },
+                        groupBy: { aggregatePeriod: 'day' },
+                        entities: ['property'],
+                    })
+
+                expect(data.overview).toHaveProperty(['property', 'sum'], String(updatedProperty.unitsCount))
+                expect(data.overview).toHaveProperty(['property', 'properties'])
+                expect(data.overview.property.properties).toHaveLength(1)
+                expect(data.overview.property.properties).toEqual(expect.arrayContaining([
+                    expect.objectContaining({
+                        count: String(updatedProperty.unitsCount),
+                        address: updatedProperty.address,
+                    }),
+                ]))
+            })
         })
         describe('Incident', () => {
             it('should return total incidents for all properties', async () => {
