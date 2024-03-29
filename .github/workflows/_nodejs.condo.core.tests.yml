@@ -50,6 +50,11 @@ jobs:
           COOKIE_SECRET: test
           SERVER_URL: http://localhost:3000
 
+      - name: list dir
+        if: failure()
+        run: |
+          ls /tmp
+
       - name: Collect docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v1
