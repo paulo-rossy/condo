@@ -21,7 +21,7 @@ env:
 
 jobs:
   test:
-    runs-on: runners-set-cpu6-ram12
+    runs-on: runners-dind-set-cpu5-ram10
     strategy:
       matrix:
         node-version: [16.x]
