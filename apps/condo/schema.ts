@@ -58393,6 +58393,12 @@ export type PropertyCreateInput = {
   sender?: Maybe<SenderFieldInput>;
 };
 
+export type PropertyGroupedCounter = {
+  __typename?: 'PropertyGroupedCounter';
+  count: Scalars['String'];
+  address: Scalars['String'];
+};
+
 /**  A keystone list  */
 export type PropertyHistoryRecord = {
   __typename?: 'PropertyHistoryRecord';
@@ -59739,6 +59745,7 @@ export type PropertyMetersUpdateInput = {
 
 export type PropertyOverviewResult = {
   __typename?: 'PropertyOverviewResult';
+  properties?: Maybe<Array<PropertyGroupedCounter>>;
   sum: Scalars['String'];
 };
 

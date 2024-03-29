@@ -3,11 +3,9 @@ const { GqlWithKnexLoadList } = require('@condo/domains/common/utils/serverSchem
 
 class PropertyDataLoader extends AbstractDataLoader {
     async get ({ where }) {
-        // TODO: we should count all units including uninhabitedUnitsCount too!!!
-
         const propertyUnitDataLoader = new GqlWithKnexLoadList({
             listKey: 'Property',
-            fields: 'id unitsCount address',
+            fields: 'id unitsCount uninhabitedUnitsCount address',
             where: {
                 ...where,
                 deletedAt: null,
@@ -15,10 +13,10 @@ class PropertyDataLoader extends AbstractDataLoader {
         })
 
         const propertyIds = await propertyUnitDataLoader.load()
-        const result = await propertyUnitDataLoader.loadAggregate('SUM("unitsCount")', propertyIds.map(({ id }) => id))
+        const result = await propertyUnitDataLoader.loadAggregate('SUM("unitsCount" + "uninhabitedUnitsCount")', propertyIds.map(({ id }) => id))
 
-        const properties = propertyIds.map(({ address, unitsCount }) => ({
-            count: unitsCount,
+        const properties = propertyIds.map(({ address, unitsCount, uninhabitedUnitsCount }) => ({
+            count: unitsCount + uninhabitedUnitsCount,
             address,
         }))
 

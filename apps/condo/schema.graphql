@@ -74158,6 +74158,11 @@ type ReceiptGroupedCounter {
   dayGroup: String!
 }
 
+type PropertyGroupedCounter {
+  count: String!
+  address: String!
+}
+
 type ReceiptOverviewResult {
   receipts: [ReceiptGroupedCounter!]
   sum: String!
@@ -74173,6 +74178,7 @@ type ResidentOverviewResult {
 }
 
 type PropertyOverviewResult {
+  properties: [PropertyGroupedCounter!]
   sum: String!
 }
 
