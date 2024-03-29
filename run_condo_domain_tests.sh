@@ -49,7 +49,7 @@ node -e 'console.log(v8.getHeapStatistics().heap_size_limit/(1024*1024))'
 
 # NOTE(pahaz): Keystone not in dev mode trying to check dist/admin folder
 mkdir -p ./apps/condo/dist/admin
-mkrir test_logs
+mkdir test_logs
 
 ls
 
