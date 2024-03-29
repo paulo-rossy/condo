@@ -29,8 +29,6 @@ jobs:
     steps:
       - name: Checkout code with submodules
         uses: actions/checkout@v3
-        with:
-          ssh-key: ${{ secrets.SSH_DOCK_SERVER_PRIVATE_KEY }}
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
