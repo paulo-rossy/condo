@@ -27,8 +27,16 @@ jobs:
         node-version: [16.x]
 
     steps:
+      - name: install deps
+        run: |
+          sudo apt update && sudo apt install -y git
+
       - name: Checkout code with submodules
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ssh-key: ${{ secrets.SSH_DOCK_SERVER_PRIVATE_KEY }}
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
