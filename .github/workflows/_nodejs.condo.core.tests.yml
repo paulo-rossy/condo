@@ -41,7 +41,6 @@ jobs:
 
       - name: run tests
         run: |
-          mkdir -p ./test_logs
           docker run -e SERVER_URL=$SERVER_URL -e COOKIE_SECRET=$COOKIE_SECRET -e REDIS_URL=$REDIS_URL -e DATABASE_URL=$DATABASE_URL -e NODE_ENV=$NODE_ENV -e DISABLE_LOGGING=$DISABLE_LOGGING --volume ./test_logs:/app/test_logs --network="host" ${{ inputs.image }} bash -c "/app/run_condo_domain_tests.sh -d ${{ inputs.domain_name }}"
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1/main
@@ -54,6 +53,7 @@ jobs:
       - name: list dir
         if: failure()
         run: |
+          ls
           ls ./test_logs
 
       - name: Collect docker logs on failure

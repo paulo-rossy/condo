@@ -28,7 +28,6 @@ RUN echo "# Build time .env config!" >> /app/.env && \
 	echo "NODE_ENV=production" >> /app/.env
 COPY . /app
 RUN chmod +x /app/run_condo_domain_tests.sh
-RUN mkdir -p "test_logs"
 RUN --mount=type=cache,target=/root/.yarn/cache YARN_CACHE_FOLDER=/root/.yarn/cache yarn install --immutable
 RUN set -ex \
     && turbo build --filter=condo^... \
