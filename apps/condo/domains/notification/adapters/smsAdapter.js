@@ -20,7 +20,7 @@ const validateConfig = (config, required) => {
 
 class SMSAdapter {
 
-    constructor (type = conf.SMS_PROVIDER || 'INSTASENT') {
+    constructor (type = conf.SMS_PROVIDER || 'SMS') {
         this.whitelist = conf['SMS_WHITE_LIST'] ? JSON.parse(conf['SMS_WHITE_LIST']) : {}
         this.adapter = null
         switch (type) {
@@ -66,7 +66,7 @@ class SMSAdapter {
     }
 }
 
-class InstasentSms{
+class InstasentSms {
 
     isConfigured = false
 
@@ -79,11 +79,21 @@ class InstasentSms{
     }
 
     isPhoneSupported (phoneNumber) {
-        return true
+        return AllCountriesTest.test(phoneNumber)
     }
 
     async checkIsAvailable () {
-        return true
+        const result = await fetch(
+            'https://api.instasent.com/organization/account',
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Accept': 'application/json',
+                },
+            }
+        )
+        return result.ok
     }
 
     async send ({ phone, message }, extendedParams = {}) {
@@ -112,7 +122,7 @@ class InstasentSms{
     }
 }
 
-class TwilioSms{
+class TwilioSms {
 
     isConfigured = false
 
@@ -129,11 +139,21 @@ class TwilioSms{
     }
 
     isPhoneSupported (phoneNumber) {
-        return true
+        return AllCountriesTest.test(phoneNumber)
     }
 
     async checkIsAvailable () {
-        return true
+        const result = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/Balance.json`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Basic ' + Buffer.from(this.accountSid + ':' + this.authToken).toString('base64'),
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        )
+        return result.ok
     }
 
     async send ({ phone, message }, extendedParams = {}) {
